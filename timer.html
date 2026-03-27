@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Timer de Clase</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --pink:#ff6b9d; --purple:#a855f7; --blue:#3b82f6; --cyan:#06b6d4;
+  --green:#22c55e; --yellow:#facc15; --orange:#f97316; --red:#ef4444;
+  --bg:#fdf6ff; --card:#ffffff; --border:#e8d5f5;
+  --text:#2d1b4e; --muted:#9d80c0; --shadow:rgba(120,60,200,0.10);
+
+  /* CLASS MODE — bright & playful */
+  --cm-bg1: #fff0fa;
+  --cm-bg2: #f0f4ff;
+  --cm-card: #ffffff;
+  --cm-border: #e0c8f8;
+  --cm-text: #2d1b4e;
+  --cm-muted: #b090d8;
+  --cm-strip: #fce7ff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+button,input,textarea{font-family:'Nunito',sans-serif}
+.hidden{display:none!important}
+
+/* ════════════════════════════
+   EDIT MODE
+════════════════════════════ */
+#editMode{padding:20px;max-width:860px;margin:0 auto}
+.edit-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;gap:12px;flex-wrap:wrap}
+.edit-topbar h1{font-family:'Fredoka One',cursive;font-size:24px;color:var(--purple);display:flex;align-items:center;gap:8px}
+.edit-topbar-btns{display:flex;gap:8px;flex-wrap:wrap}
+.pill{padding:8px 18px;border-radius:50px;border:2px solid var(--border);background:var(--card);font-size:13px;font-weight:800;color:var(--muted);cursor:pointer;transition:all .15s}
+.pill:hover{border-color:var(--purple);color:var(--purple)}
+.pill.go{background:var(--green);border-color:var(--green);color:#fff;font-size:14px}
+.pill.go:hover{background:#16a34a}
+.pill.save{background:var(--blue);border-color:var(--blue);color:#fff}
+.pill.save:hover{background:#1d4ed8}
+.pill.popup{background:var(--purple);border-color:var(--purple);color:#fff}
+.pill.popup:hover{background:#7c3aed}
+
+.saved-section{margin-bottom:22px}
+.section-label{font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.saved-list{display:flex;gap:10px;flex-wrap:wrap}
+.saved-card{background:var(--card);border:2px solid var(--border);border-radius:16px;padding:12px 16px;cursor:pointer;transition:all .18s;min-width:130px;max-width:190px;position:relative;box-shadow:0 2px 8px var(--shadow)}
+.saved-card:hover{border-color:var(--purple);transform:translateY(-2px)}
+.saved-card-name{font-size:14px;font-weight:800;color:var(--text);margin-bottom:3px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.saved-card-meta{font-size:11px;color:var(--muted);font-weight:600}
+.saved-card-del{position:absolute;top:8px;right:9px;font-size:13px;color:#ccc;background:none;border:none;cursor:pointer;transition:color .15s;line-height:1}
+.saved-card-del:hover{color:var(--red)}
+.no-saved{font-size:13px;color:#ccc;font-weight:600;padding:6px 0}
+
+.meta-card{background:var(--card);border:2px solid var(--border);border-radius:18px;padding:18px 20px;margin-bottom:20px;box-shadow:0 2px 8px var(--shadow)}
+.meta-card h2{font-family:'Fredoka One',cursive;font-size:16px;color:var(--purple);margin-bottom:14px}
+.meta-row{display:flex;gap:12px;flex-wrap:wrap}
+.meta-field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:130px}
+.meta-field label{font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+.meta-field input{border:2px solid var(--border);border-radius:10px;padding:8px 12px;font-size:14px;font-weight:700;outline:none;background:#fdf6ff;color:var(--text)}
+.meta-field input:focus{border-color:var(--purple)}
+
+.cards-section .section-label{margin-bottom:10px}
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-bottom:10px}
+.ecard{background:var(--card);border:2px solid var(--border);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px;transition:all .18s;position:relative;box-shadow:0 2px 8px var(--shadow)}
+.ecard:hover{border-color:var(--purple)}
+.ecard-top{display:flex;align-items:center;justify-content:space-between}
+.ecard-num{font-family:'Fredoka One',cursive;font-size:12px;color:#fff;background:var(--purple);border-radius:20px;padding:2px 10px}
+.ecard:nth-child(5n+1) .ecard-num{background:var(--pink)}
+.ecard:nth-child(5n+2) .ecard-num{background:var(--blue)}
+.ecard:nth-child(5n+3) .ecard-num{background:var(--green)}
+.ecard:nth-child(5n+4) .ecard-num{background:var(--orange)}
+.ecard:nth-child(5n+5) .ecard-num{background:var(--purple)}
+.ecard-del{font-size:14px;color:#ddd;background:none;border:none;cursor:pointer;transition:color .15s;line-height:1}
+.ecard-del:hover{color:var(--red)}
+.ecard-title{font-size:14px;font-weight:800;border:none;outline:none;width:100%;color:var(--text);background:transparent;resize:none;line-height:1.4}
+.ecard-title::placeholder{color:#ccc;font-weight:600}
+.ecard-dur-row{display:flex;align-items:center;gap:7px}
+.ecard-dur-row label{font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap}
+.ecard-dur{width:66px;border:2px solid var(--border);border-radius:8px;padding:4px 8px;font-size:13px;font-weight:800;text-align:center;outline:none;color:var(--orange);background:#fff9f0}
+.ecard-dur:focus{border-color:var(--orange)}
+.ecard-dur::placeholder{color:#ddd;font-weight:500}
+.add-card-btn{background:var(--card);border:2.5px dashed var(--border);border-radius:16px;padding:14px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;font-weight:700;color:var(--muted);cursor:pointer;transition:all .15s}
+.add-card-btn:hover{border-color:var(--purple);color:var(--purple)}
+
+/* popup hint box */
+.popup-hint{background:linear-gradient(135deg,#f3e8ff,#e0f2fe);border:2px solid #c084fc;border-radius:16px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:flex-start;gap:12px}
+.popup-hint-icon{font-size:28px;flex-shrink:0}
+.popup-hint-text h3{font-family:'Fredoka One',cursive;font-size:15px;color:var(--purple);margin-bottom:4px}
+.popup-hint-text p{font-size:12px;font-weight:600;color:#6d4cb0;line-height:1.5}
+
+/* ════════════════════════════
+   CLASS MODE — COLORIDO 🌈
+════════════════════════════ */
+#classMode{
+  min-height:100vh;
+  background: linear-gradient(145deg, #fff0fa 0%, #f0f4ff 50%, #f0fff8 100%);
+  display:flex;flex-direction:column;
+}
+
+/* top strip */
+.cm-strip{
+  background:rgba(255,255,255,0.75);
+  backdrop-filter:blur(8px);
+  border-bottom:2px solid var(--cm-border);
+  padding:9px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+}
+.cm-classname{font-family:'Fredoka One',cursive;font-size:15px;color:var(--purple);white-space:nowrap}
+.cm-bar-wrap{flex:1;min-width:100px}
+.cm-bar-bg{height:12px;background:#ede0fa;border-radius:50px;overflow:hidden}
+.cm-bar-fill{height:100%;border-radius:50px;background:linear-gradient(90deg,var(--green),var(--yellow),var(--orange),var(--red));transition:width 1s linear}
+.cm-bar-labels{display:flex;justify-content:space-between;margin-top:3px}
+.cm-bar-labels span{font-size:10px;font-weight:700;color:var(--cm-muted)}
+.cm-bar-left{color:var(--purple)!important;font-weight:800!important}
+.cm-bar-left.urgent{color:var(--red)!important}
+.cm-strip-btns{display:flex;gap:7px;align-items:center}
+.cm-exit{background:none;border:1.5px solid var(--cm-border);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:700;color:var(--cm-muted);cursor:pointer;transition:all .15s}
+.cm-exit:hover{border-color:var(--red);color:var(--red)}
+.cm-popout{background:var(--purple);border:none;border-radius:20px;padding:5px 12px;font-size:12px;font-weight:700;color:#fff;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px}
+.cm-popout:hover{background:#7c3aed}
+
+/* main */
+.cm-main{flex:1;display:flex;align-items:center;padding:20px 32px;gap:32px}
+
+/* LEFT: timer */
+.cm-timer-col{display:flex;flex-direction:column;align-items:center;gap:14px;flex-shrink:0}
+
+.cm-circle-wrap{position:relative;width:220px;height:220px}
+.cm-circle-wrap svg{position:absolute;top:0;left:0;width:100%;height:100%;transform:rotate(-90deg)}
+.cm-arc-bg{fill:none;stroke:#e8d5f5;stroke-width:24}
+.cm-arc{fill:none;stroke:var(--orange);stroke-width:24;stroke-linecap:butt;transition:stroke-dashoffset .9s linear,stroke .5s}
+.cm-tick-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+.cm-circle-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.cm-digits{font-family:'Fredoka One',cursive;font-size:52px;color:var(--text);line-height:1;letter-spacing:-2px}
+.cm-state{font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--cm-muted)}
+
+.cm-presets{display:flex;gap:5px;flex-wrap:wrap;justify-content:center}
+.cm-pre{padding:6px 13px;border-radius:20px;border:2px solid var(--cm-border);background:rgba(255,255,255,0.7);font-size:13px;font-weight:800;color:var(--cm-muted);cursor:pointer;transition:all .15s}
+.cm-pre:hover{border-color:var(--purple);color:var(--purple);background:#fff}
+.cm-pre.sel{background:var(--orange);border-color:var(--orange);color:#fff}
+
+.cm-controls{display:flex;gap:10px;align-items:center}
+.cm-btn-go{width:66px;height:66px;border-radius:50%;border:none;background:var(--orange);color:#fff;font-size:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .15s;box-shadow:0 0 0 8px rgba(249,115,22,.15),0 6px 20px rgba(249,115,22,.4)}
+.cm-btn-go:hover{transform:scale(1.08)}.cm-btn-go:active{transform:scale(.95)}
+.cm-btn-sm{width:44px;height:44px;border-radius:50%;border:2px solid var(--cm-border);background:rgba(255,255,255,0.7);color:var(--cm-muted);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
+.cm-btn-sm:hover{border-color:var(--purple);color:var(--purple);background:#fff}
+
+/* RIGHT */
+.cm-right-col{flex:1;display:flex;flex-direction:column;gap:16px;min-width:0}
+
+/* BIG FOCUS CARD */
+.cm-focus-card{
+  background:#fff;
+  border:3px solid var(--cm-border);
+  border-radius:28px;
+  padding:30px 36px;
+  display:flex;flex-direction:column;gap:10px;
+  transition:border-color .4s,box-shadow .4s;
+  position:relative;overflow:hidden;
+  box-shadow:0 4px 24px rgba(168,85,247,0.10);
+}
+/* rainbow top border animation */
+.cm-focus-card::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:5px;
+  background:linear-gradient(90deg,var(--pink),var(--yellow),var(--cyan),var(--green),var(--purple),var(--pink));
+  background-size:200% 100%;
+  animation:rainbowbar 3s linear infinite;
+  border-radius:28px 28px 0 0;
+}
+@keyframes rainbowbar{0%{background-position:0%}100%{background-position:200%}}
+
+/* shimmer */
+.cm-focus-card::before{
+  content:'';position:absolute;top:5px;left:-60%;width:40%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);
+  animation:shimmer 4s ease-in-out infinite;pointer-events:none;
+}
+@keyframes shimmer{0%,100%{left:-60%}50%{left:120%}}
+
+.cm-focus-card.urgent-glow{
+  border-color:var(--red);
+  box-shadow:0 0 0 5px rgba(239,68,68,.15),0 4px 24px rgba(239,68,68,.15);
+}
+.cm-focus-label{font-size:11px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:var(--cm-muted)}
+.cm-focus-dur{font-size:14px;font-weight:700;color:var(--orange);min-height:18px}
+
+/* ANIMATED TEXT */
+.cm-focus-text{
+  font-family:'Fredoka One',cursive;
+  font-size:clamp(30px,4.5vw,56px);
+  color:var(--text);line-height:1.15;word-break:break-word;
+  cursor:text;outline:none;
+}
+.cm-focus-text:focus{color:var(--purple)}
+.cm-focus-text.bouncing{animation:textbounce 2.8s ease-in-out infinite}
+@keyframes textbounce{0%,100%{transform:translateY(0)}40%{transform:translateY(-7px)}60%{transform:translateY(-4px)}}
+
+/* letter wave when running */
+.cm-focus-text.rainbow span{
+  display:inline-block;
+  animation:lwave 2s ease-in-out infinite;
+}
+.cm-focus-text.rainbow span:nth-child(1){animation-delay:0s}
+.cm-focus-text.rainbow span:nth-child(2){animation-delay:.07s}
+.cm-focus-text.rainbow span:nth-child(3){animation-delay:.14s}
+.cm-focus-text.rainbow span:nth-child(4){animation-delay:.21s}
+.cm-focus-text.rainbow span:nth-child(5){animation-delay:.28s}
+.cm-focus-text.rainbow span:nth-child(6){animation-delay:.35s}
+.cm-focus-text.rainbow span:nth-child(7){animation-delay:.42s}
+.cm-focus-text.rainbow span:nth-child(8){animation-delay:.49s}
+.cm-focus-text.rainbow span:nth-child(9){animation-delay:.56s}
+.cm-focus-text.rainbow span:nth-child(10){animation-delay:.63s}
+.cm-focus-text.rainbow span:nth-child(n+11){animation-delay:.7s}
+@keyframes lwave{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.cm-focus-text.rainbow span:nth-child(7n+1){color:var(--pink)}
+.cm-focus-text.rainbow span:nth-child(7n+2){color:var(--yellow)}
+.cm-focus-text.rainbow span:nth-child(7n+3){color:var(--cyan)}
+.cm-focus-text.rainbow span:nth-child(7n+4){color:var(--green)}
+.cm-focus-text.rainbow span:nth-child(7n+5){color:var(--purple)}
+.cm-focus-text.rainbow span:nth-child(7n+6){color:var(--orange)}
+.cm-focus-text.rainbow span:nth-child(7n+0){color:var(--blue)}
+
+.cm-focus-hint{font-size:11px;color:#c8b0e8;font-weight:600;margin-top:2px}
+
+/* QUEUE */
+.cm-queue-wrap{}
+.cm-queue-label{font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--cm-muted);margin-bottom:8px}
+.cm-queue{display:flex;gap:8px;flex-wrap:wrap}
+.cm-qcard{background:rgba(255,255,255,0.65);border:2px solid var(--cm-border);border-radius:12px;padding:8px 12px;cursor:pointer;transition:all .15s;min-width:85px;max-width:170px}
+.cm-qcard:hover{border-color:var(--purple);background:#fff}
+.cm-qcard.active-q{border-color:var(--purple);background:#f8f0ff}
+.cm-qcard.done-q{opacity:.3}
+.cm-qcard-num{font-size:9px;font-weight:800;letter-spacing:1px;color:var(--cm-muted);margin-bottom:2px;text-transform:uppercase}
+.cm-qcard-text{font-size:11px;font-weight:700;color:var(--purple);line-height:1.3;word-break:break-word}
+.cm-qcard.done-q .cm-qcard-text{text-decoration:line-through}
+.cm-qcard-dur{font-size:10px;font-weight:700;color:var(--orange);opacity:.7;margin-top:2px}
+
+/* done overlay */
+.cm-done{position:fixed;inset:0;background:rgba(253,246,255,.96);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:500}
+.cm-done.show{display:flex}
+.cm-done-icon{font-size:72px;animation:donebounce .6s ease}
+@keyframes donebounce{0%{transform:scale(0)}60%{transform:scale(1.2)}100%{transform:scale(1)}}
+.cm-done h2{font-family:'Fredoka One',cursive;font-size:42px;color:var(--purple);text-align:center}
+.cm-done p{color:var(--muted);font-size:15px;font-weight:700;text-align:center;max-width:320px;line-height:1.6}
+.cm-done button{padding:14px 38px;border-radius:50px;border:none;background:linear-gradient(135deg,var(--pink),var(--purple));color:#fff;font-family:'Fredoka One',cursive;font-size:20px;cursor:pointer;box-shadow:0 4px 18px rgba(168,85,247,.35);transition:transform .15s}
+.cm-done button:hover{transform:scale(1.05)}
+
+/* POPUP MODE — compact window */
+#popupMode{
+  min-height:100vh;
+  background:linear-gradient(145deg,#fff0fa,#f0f4ff);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:16px;gap:12px;
+}
+.popup-circle-wrap{position:relative;width:160px;height:160px}
+.popup-circle-wrap svg{position:absolute;top:0;left:0;width:100%;height:100%;transform:rotate(-90deg)}
+.popup-arc-bg{fill:none;stroke:#e8d5f5;stroke-width:20}
+.popup-arc{fill:none;stroke:var(--orange);stroke-width:20;stroke-linecap:butt;transition:stroke-dashoffset .9s linear,stroke .5s}
+.popup-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.popup-digits{font-family:'Fredoka One',cursive;font-size:38px;color:var(--text);line-height:1;letter-spacing:-1px}
+.popup-state{font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.popup-focus{font-family:'Fredoka One',cursive;font-size:18px;color:var(--purple);text-align:center;max-width:220px;line-height:1.2;min-height:22px}
+.popup-focus.bouncing{animation:textbounce 2.8s ease-in-out infinite}
+.popup-focus.rainbow span{display:inline-block;animation:lwave 2s ease-in-out infinite}
+.popup-focus.rainbow span:nth-child(7n+1){color:var(--pink)}
+.popup-focus.rainbow span:nth-child(7n+2){color:var(--yellow)}
+.popup-focus.rainbow span:nth-child(7n+3){color:var(--cyan)}
+.popup-focus.rainbow span:nth-child(7n+4){color:var(--green)}
+.popup-focus.rainbow span:nth-child(7n+5){color:var(--purple)}
+.popup-focus.rainbow span:nth-child(7n+6){color:var(--orange)}
+.popup-focus.rainbow span:nth-child(7n+0){color:var(--blue)}
+.popup-focus.rainbow span:nth-child(1){animation-delay:0s}
+.popup-focus.rainbow span:nth-child(2){animation-delay:.07s}
+.popup-focus.rainbow span:nth-child(3){animation-delay:.14s}
+.popup-focus.rainbow span:nth-child(4){animation-delay:.21s}
+.popup-focus.rainbow span:nth-child(5){animation-delay:.28s}
+.popup-focus.rainbow span:nth-child(6){animation-delay:.35s}
+.popup-focus.rainbow span:nth-child(7){animation-delay:.42s}
+.popup-focus.rainbow span:nth-child(8){animation-delay:.49s}
+.popup-focus.rainbow span:nth-child(9){animation-delay:.56s}
+.popup-focus.rainbow span:nth-child(n+10){animation-delay:.63s}
+.popup-presets{display:flex;gap:5px;flex-wrap:wrap;justify-content:center}
+.popup-pre{padding:4px 10px;border-radius:16px;border:2px solid var(--border);background:#fff;font-size:12px;font-weight:800;color:var(--muted);cursor:pointer;transition:all .15s}
+.popup-pre:hover{border-color:var(--purple);color:var(--purple)}
+.popup-pre.sel{background:var(--orange);border-color:var(--orange);color:#fff}
+.popup-controls{display:flex;gap:8px;align-items:center}
+.popup-go{width:52px;height:52px;border-radius:50%;border:none;background:var(--orange);color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .15s;box-shadow:0 0 0 6px rgba(249,115,22,.15)}
+.popup-go:hover{transform:scale(1.08)}.popup-go:active{transform:scale(.95)}
+.popup-sm{width:36px;height:36px;border-radius:50%;border:2px solid var(--border);background:#fff;color:var(--muted);font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
+.popup-sm:hover{border-color:var(--purple);color:var(--purple)}
+.popup-bar-wrap{width:100%;max-width:220px}
+.popup-bar-bg{height:8px;background:#ede0fa;border-radius:50px;overflow:hidden}
+.popup-bar-fill{height:100%;border-radius:50px;background:linear-gradient(90deg,var(--green),var(--yellow),var(--orange),var(--red));transition:width 1s linear}
+.popup-bar-left{font-size:10px;font-weight:800;color:var(--purple);text-align:center;margin-top:3px}
+.popup-bar-left.urgent{color:var(--red)}
+
+/* toast */
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--purple);color:#fff;padding:10px 22px;border-radius:50px;font-size:13px;font-weight:800;opacity:0;transition:all .3s;z-index:600;pointer-events:none;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+@media(max-width:660px){
+  .cm-main{flex-direction:column;align-items:center;padding:14px 16px;gap:16px}
+  .cm-circle-wrap{width:180px;height:180px}
+  .cm-digits{font-size:42px}
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════
+     EDIT MODE
+════════════════════════════════ -->
+<div id="editMode">
+  <div class="edit-topbar">
+    <h1>🌈 Timer de Clase</h1>
+    <div class="edit-topbar-btns">
+      <button class="pill save" onclick="saveClass()">💾 Guardar</button>
+      <button class="pill go" onclick="startClass()">▶ Iniciar clase</button>
+    </div>
+  </div>
+
+  <!-- popup hint -->
+  <div class="popup-hint">
+    <div class="popup-hint-icon">🪟</div>
+    <div class="popup-hint-text">
+      <h3>¿Cómo usar sin cerrar tus archivos?</h3>
+      <p>Presiona <strong>"📌 Abrir mini ventana"</strong> al iniciar la clase. El timer se abre en una ventana pequeña que puedes posicionar en una esquina de la pantalla — así proyectas el timer y tu guía de trabajo sigue visible.</p>
+    </div>
+  </div>
+
+  <div class="saved-section">
+    <div class="section-label">Clases guardadas</div>
+    <div class="saved-list" id="savedList"></div>
+  </div>
+
+  <div class="meta-card">
+    <h2>⚙️ Configuración</h2>
+    <div class="meta-row">
+      <div class="meta-field">
+        <label>Nombre de la clase</label>
+        <input type="text" id="className" placeholder="Ej: Matemáticas 3°B">
+      </div>
+      <div class="meta-field" style="max-width:120px">
+        <label>Inicio</label>
+        <input type="time" id="classStart" value="08:00">
+      </div>
+      <div class="meta-field" style="max-width:120px">
+        <label>Fin</label>
+        <input type="time" id="classEnd" value="09:30">
+      </div>
+    </div>
+  </div>
+
+  <div class="cards-section">
+    <div class="section-label">Actividades de la clase</div>
+    <div class="cards-grid" id="cardsGrid"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     CLASS MODE (pantalla completa)
+════════════════════════════════ -->
+<div id="classMode" class="hidden">
+  <div class="cm-strip">
+    <div class="cm-classname" id="cmClassName">Clase</div>
+    <div class="cm-bar-wrap">
+      <div class="cm-bar-bg"><div class="cm-bar-fill" id="cmBarFill" style="width:0%"></div></div>
+      <div class="cm-bar-labels">
+        <span id="cmBarStart">08:00</span>
+        <span class="cm-bar-left" id="cmBarLeft">— min restantes</span>
+        <span id="cmBarEnd">09:30</span>
+      </div>
+    </div>
+    <div class="cm-strip-btns">
+      <button class="cm-popout" onclick="openPopup()" title="Abrir mini ventana flotante">📌 Mini ventana</button>
+      <button class="cm-exit" onclick="exitClass()">✕ Salir</button>
+    </div>
+  </div>
+
+  <div class="cm-main">
+    <div class="cm-timer-col">
+      <div class="cm-circle-wrap">
+        <svg class="cm-tick-svg" viewBox="0 0 220 220"><g id="cmTicks"></g></svg>
+        <svg viewBox="0 0 220 220">
+          <circle class="cm-arc-bg" cx="110" cy="110" r="90"/>
+          <circle class="cm-arc" id="cmArc" cx="110" cy="110" r="90"
+            stroke-dasharray="565.49" stroke-dashoffset="0"/>
+        </svg>
+        <div class="cm-circle-inner">
+          <div class="cm-digits" id="cmDigits">05:00</div>
+          <div class="cm-state" id="cmState">listo</div>
+        </div>
+      </div>
+
+      <div class="cm-presets">
+        <button class="cm-pre" onclick="cmSetPre(this,60)">1'</button>
+        <button class="cm-pre" onclick="cmSetPre(this,120)">2'</button>
+        <button class="cm-pre" onclick="cmSetPre(this,180)">3'</button>
+        <button class="cm-pre sel" onclick="cmSetPre(this,300)">5'</button>
+        <button class="cm-pre" onclick="cmSetPre(this,600)">10'</button>
+        <button class="cm-pre" onclick="cmSetPre(this,900)">15'</button>
+        <button class="cm-pre" onclick="cmSetPre(this,1200)">20'</button>
+        <button class="cm-pre" onclick="cmSetPre(this,1800)">30'</button>
+      </div>
+
+      <div class="cm-controls">
+        <button class="cm-btn-sm" onclick="cmReset()" title="Reiniciar">↺</button>
+        <button class="cm-btn-go" id="cmGoBtn" onclick="cmToggle()">▶</button>
+        <button class="cm-btn-sm" onclick="cmSkip()" title="Saltar">⏭</button>
+      </div>
+    </div>
+
+    <div class="cm-right-col">
+      <div class="cm-focus-card" id="cmFocusCard">
+        <div class="cm-focus-label">Trabajando ahora</div>
+        <div class="cm-focus-text" id="cmFocusText" contenteditable="true" spellcheck="false"></div>
+        <div class="cm-focus-dur" id="cmFocusDur"></div>
+        <div class="cm-focus-hint">✏️ Puedes editar el texto directamente</div>
+      </div>
+      <div class="cm-queue-wrap">
+        <div class="cm-queue-label">Próximas actividades</div>
+        <div class="cm-queue" id="cmQueue"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cm-done" id="cmDone">
+    <div class="cm-done-icon">🎉</div>
+    <h2>¡Tiempo!</h2>
+    <p id="cmDoneMsg">El bloque terminó.</p>
+    <button onclick="cmDismiss()">Siguiente →</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     POPUP MODE (mini window)
+════════════════════════════════ -->
+<div id="popupMode" class="hidden">
+  <div class="popup-bar-wrap">
+    <div class="popup-bar-bg"><div class="popup-bar-fill" id="ppBarFill" style="width:0%"></div></div>
+    <div class="popup-bar-left" id="ppBarLeft">— min restantes</div>
+  </div>
+
+  <div class="popup-circle-wrap">
+    <svg viewBox="0 0 160 160">
+      <circle class="popup-arc-bg" cx="80" cy="80" r="64"/>
+      <circle class="popup-arc" id="ppArc" cx="80" cy="80" r="64"
+        stroke-dasharray="402.12" stroke-dashoffset="0"/>
+    </svg>
+    <div class="popup-inner">
+      <div class="popup-digits" id="ppDigits">05:00</div>
+      <div class="popup-state" id="ppState">listo</div>
+    </div>
+  </div>
+
+  <div class="popup-focus" id="ppFocusText">—</div>
+
+  <div class="popup-presets">
+    <button class="popup-pre" onclick="ppSetPre(this,60)">1'</button>
+    <button class="popup-pre" onclick="ppSetPre(this,120)">2'</button>
+    <button class="popup-pre" onclick="ppSetPre(this,180)">3'</button>
+    <button class="popup-pre sel" onclick="ppSetPre(this,300)">5'</button>
+    <button class="popup-pre" onclick="ppSetPre(this,600)">10'</button>
+    <button class="popup-pre" onclick="ppSetPre(this,900)">15'</button>
+    <button class="popup-pre" onclick="ppSetPre(this,1800)">30'</button>
+  </div>
+
+  <div class="popup-controls">
+    <button class="popup-sm" onclick="ppReset()">↺</button>
+    <button class="popup-go" id="ppGoBtn" onclick="ppToggle()">▶</button>
+    <button class="popup-sm" onclick="ppSkip()">⏭</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ─────────────────────────────────
+   TICKS
+───────────────────────────────── */
+(function(){
+  var g=document.getElementById('cmTicks'), cx=110, cy=110, R=90;
+  for(var i=0;i<60;i++){
+    var a=(i/60)*2*Math.PI-Math.PI/2, maj=i%5===0;
+    var ln=document.createElementNS('http://www.w3.org/2000/svg','line');
+    ln.setAttribute('x1',cx+Math.cos(a)*(maj?R-14:R-7));
+    ln.setAttribute('y1',cy+Math.sin(a)*(maj?R-14:R-7));
+    ln.setAttribute('x2',cx+Math.cos(a)*(R+1));
+    ln.setAttribute('y2',cy+Math.sin(a)*(R+1));
+    ln.setAttribute('stroke',maj?'#d8c0f0':'#ede0fa');
+    ln.setAttribute('stroke-width',maj?'2':'1');
+    g.appendChild(ln);
+    if(maj&&i>0){
+      var lr=R-26, t=document.createElementNS('http://www.w3.org/2000/svg','text');
+      t.setAttribute('x',cx+Math.cos(a)*lr); t.setAttribute('y',cy+Math.sin(a)*lr);
+      t.setAttribute('text-anchor','middle'); t.setAttribute('dominant-baseline','middle');
+      t.setAttribute('font-size','11'); t.setAttribute('font-family','Nunito,sans-serif');
+      t.setAttribute('font-weight','800'); t.setAttribute('fill','#c8a8e8');
+      t.textContent=i; g.appendChild(t);
+    }
+  }
+})();
+
+/* ─────────────────────────────────
+   UTILS
+───────────────────────────────── */
+function fmt(s){var m=Math.floor(s/60),sc=s%60;return(m<10?'0':'')+m+':'+(sc<10?'0':'')+sc;}
+function parseDur(str){
+  if(!str||!str.trim())return 0;
+  str=str.replace(/\s/g,'');
+  var m=str.match(/^(\d+):(\d+)$/);if(m)return+m[1]*60+ +m[2];
+  var m2=str.match(/^(\d+)/);if(m2)return+m2[1]*60;
+  return 0;
+}
+function fmtDur(s){
+  if(!s||s<=0)return '';
+  var m=Math.floor(s/60),sc=s%60;
+  return sc>0?m+':'+(sc<10?'0':'')+sc+"'":m+"'";
+}
+function toast(msg){
+  var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},2600);
+}
+function wrapChars(text){
+  if(!text)return '—';
+  return text.split('').map(function(ch){
+    if(ch===' ')return ' ';
+    return '<span>'+ch.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</span>';
+  }).join('');
+}
+function arcColor(f){return f>.5?'#f97316':f>.25?'#facc15':f>.1?'#f97316':'#ef4444';}
+
+/* ─────────────────────────────────
+   SHARED TIMER STATE
+   (both classMode and popupMode share same timer)
+───────────────────────────────── */
+var total=300, remaining=300, running=false, iv=null, audioCtx=null;
+var cmActive=0, cmStates=[], cmBarIv=null;
+var cards=[];
+
+/* ─────────────────────────────────
+   CARDS / GRID
+───────────────────────────────── */
+function renderGrid(){
+  var grid=document.getElementById('cardsGrid');grid.innerHTML='';
+  cards.forEach(function(card,i){
+    var el=document.createElement('div');el.className='ecard';
+    var top=document.createElement('div');top.className='ecard-top';
+    var num=document.createElement('div');num.className='ecard-num';num.textContent='Actividad '+(i+1);
+    var del=document.createElement('button');del.className='ecard-del';del.textContent='✕';
+    del.onclick=function(){cards.splice(i,1);renderGrid();};
+    top.appendChild(num);top.appendChild(del);
+    var ta=document.createElement('textarea');ta.className='ecard-title';ta.rows=2;
+    ta.placeholder='Escribe la actividad...';ta.value=card.title;
+    ta.oninput=function(){cards[i].title=ta.value;};
+    var dr=document.createElement('div');dr.className='ecard-dur-row';
+    var lbl=document.createElement('label');lbl.textContent='⏱ Tiempo (opcional)';
+    var din=document.createElement('input');din.className='ecard-dur';din.type='text';
+    din.placeholder="5'";din.value=cards[i].dur>0?fmtDur(cards[i].dur):'';
+    din.oninput=function(){cards[i].dur=parseDur(din.value);};
+    dr.appendChild(lbl);dr.appendChild(din);
+    el.appendChild(top);el.appendChild(ta);el.appendChild(dr);
+    grid.appendChild(el);
+  });
+  var add=document.createElement('div');add.className='add-card-btn';
+  add.innerHTML='<span style="font-size:22px">✨</span> Nueva actividad';
+  add.onclick=function(){cards.push({title:'',dur:0});renderGrid();};
+  grid.appendChild(add);
+}
+
+/* ─────────────────────────────────
+   SAVE / LOAD
+───────────────────────────────── */
+function getDB(){try{return JSON.parse(localStorage.getItem('clsTimerKids')||'[]');}catch(e){return[];}}
+function setDB(a){try{localStorage.setItem('clsTimerKids',JSON.stringify(a));}catch(e){toast('Error al guardar');}}
+
+function saveClass(){
+  var name=document.getElementById('className').value.trim();
+  if(!name){name=prompt('Nombre de la clase:','');if(!name)return;}
+  document.getElementById('className').value=name;
+  var obj={id:Date.now(),name:name,
+    classStart:document.getElementById('classStart').value,
+    classEnd:document.getElementById('classEnd').value,
+    cards:cards.map(function(c){return{title:c.title,dur:c.dur};}),
+    savedAt:new Date().toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric'})
+  };
+  var a=getDB(),idx=-1;
+  for(var i=0;i<a.length;i++){if(a[i].name===name){idx=i;break;}}
+  if(idx>=0){if(!confirm('Ya existe "'+name+'". ¿Sobreescribir?'))return;a[idx]=obj;}
+  else a.unshift(obj);
+  setDB(a);renderSaved();toast('✅ "'+name+'" guardada');
+}
+
+function loadClass(id){
+  var a=getDB(),obj=null;
+  for(var i=0;i<a.length;i++){if(a[i].id===id){obj=a[i];break;}}
+  if(!obj)return;
+  document.getElementById('className').value=obj.name||'';
+  document.getElementById('classStart').value=obj.classStart||'08:00';
+  document.getElementById('classEnd').value=obj.classEnd||'09:30';
+  cards=(obj.cards||[]).map(function(c){return{title:c.title||'',dur:c.dur||0};});
+  renderGrid();toast('📂 "'+obj.name+'" cargada');
+}
+
+function deleteClass(id){
+  var a=getDB(),obj=null;
+  for(var i=0;i<a.length;i++){if(a[i].id===id){obj=a[i];break;}}
+  if(!obj||!confirm('¿Eliminar "'+obj.name+'"?'))return;
+  setDB(a.filter(function(c){return c.id!==id;}));renderSaved();toast('🗑 Eliminada');
+}
+
+function renderSaved(){
+  var a=getDB(),list=document.getElementById('savedList');list.innerHTML='';
+  if(!a.length){var em=document.createElement('div');em.className='no-saved';em.textContent='Todavía no hay clases guardadas.';list.appendChild(em);return;}
+  a.forEach(function(obj){
+    var card=document.createElement('div');card.className='saved-card';
+    var nm=document.createElement('div');nm.className='saved-card-name';nm.textContent=obj.name;
+    var meta=document.createElement('div');meta.className='saved-card-meta';
+    var n=(obj.cards||[]).length;
+    meta.textContent=(obj.classStart&&obj.classEnd?obj.classStart+'–'+obj.classEnd+' · ':'')+n+' act.';
+    var del=document.createElement('button');del.className='saved-card-del';del.textContent='✕';
+    del.onclick=function(e){e.stopPropagation();deleteClass(obj.id);};
+    card.appendChild(nm);card.appendChild(meta);card.appendChild(del);
+    card.onclick=function(){loadClass(obj.id);};
+    list.appendChild(card);
+  });
+}
+
+/* ─────────────────────────────────
+   TIMER CORE (shared)
+───────────────────────────────── */
+function updateBothTimers(){
+  var f=total>0?remaining/total:0;
+  var CIRC_CM=2*Math.PI*90; // 565.49
+  var CIRC_PP=2*Math.PI*64; // 402.12
+  // class mode arc
+  var arc=document.getElementById('cmArc');
+  if(arc){arc.style.strokeDashoffset=CIRC_CM*(1-f);arc.style.stroke=arcColor(f);}
+  document.getElementById('cmDigits').textContent=fmt(remaining);
+  document.getElementById('cmState').textContent=running?'en curso':(remaining===total?'listo':'pausado');
+  document.getElementById('cmFocusCard').classList.toggle('urgent-glow',f<=.1&&running);
+  // popup arc
+  var pp=document.getElementById('ppArc');
+  if(pp){pp.style.strokeDashoffset=CIRC_PP*(1-f);pp.style.stroke=arcColor(f);}
+  document.getElementById('ppDigits').textContent=fmt(remaining);
+  document.getElementById('ppState').textContent=running?'en curso':(remaining===total?'listo':'pausado');
+  // animation on focus texts
+  setFocusAnim(running);
+}
+
+function setFocusAnim(run){
+  var el=document.getElementById('cmFocusText');
+  var pp=document.getElementById('ppFocusText');
+  [el,pp].forEach(function(e){
+    if(!e)return;
+    e.classList.remove('bouncing','rainbow');
+    e.classList.add(run?'rainbow':'bouncing');
+  });
+}
+
+function timerTick(){
+  remaining--;
+  updateBothTimers();
+  if(remaining<=0){
+    clearInterval(iv);running=false;
+    document.getElementById('cmGoBtn').textContent='▶';
+    document.getElementById('ppGoBtn').textContent='▶';
+    playDone();
+    document.getElementById('cmDone').classList.add('show');
+  }
+}
+
+function toggleRunning(){
+  if(remaining<=0)return;
+  running=!running;
+  var cmBtn=document.getElementById('cmGoBtn');
+  var ppBtn=document.getElementById('ppGoBtn');
+  if(running){
+    cmBtn.textContent='⏸';ppBtn.textContent='⏸';
+    iv=setInterval(timerTick,1000);
+  } else {
+    clearInterval(iv);cmBtn.textContent='▶';ppBtn.textContent='▶';
+  }
+  updateBothTimers();
+}
+
+function resetTimer(secs){
+  clearInterval(iv);running=false;
+  if(secs!==undefined)total=secs;
+  remaining=total;
+  document.getElementById('cmGoBtn').textContent='▶';
+  document.getElementById('ppGoBtn').textContent='▶';
+  updateBothTimers();
+}
+
+function skipTimer(){clearInterval(iv);running=false;remaining=0;document.getElementById('cmGoBtn').textContent='▶';document.getElementById('ppGoBtn').textContent='▶';updateBothTimers();document.getElementById('cmDone').classList.add('show');}
+
+function cmSetPre(el,secs){
+  document.querySelectorAll('.cm-pre').forEach(function(b){b.classList.remove('sel');});
+  el.classList.add('sel');resetTimer(secs);
+}
+function cmToggle(){toggleRunning();}
+function cmReset(){resetTimer();}
+function cmSkip(){skipTimer();}
+
+function ppSetPre(el,secs){
+  document.querySelectorAll('.popup-pre').forEach(function(b){b.classList.remove('sel');});
+  el.classList.add('sel');resetTimer(secs);
+}
+function ppToggle(){toggleRunning();}
+function ppReset(){resetTimer();}
+function ppSkip(){skipTimer();}
+
+function playDone(){
+  try{
+    if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    [523,659,784,1047,1319].forEach(function(f,i){
+      setTimeout(function(){
+        var o=audioCtx.createOscillator(),g=audioCtx.createGain();
+        o.type='sine';o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;
+        g.gain.setValueAtTime(.28,audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.35);
+        o.start();o.stop(audioCtx.currentTime+.35);
+      },i*130);
+    });
+  }catch(e){}
+}
+
+/* ─────────────────────────────────
+   FOCUS TEXT
+───────────────────────────────── */
+function setFocusContent(text,dur){
+  var wrapped=wrapChars(text||'—');
+  document.getElementById('cmFocusText').innerHTML=wrapped;
+  document.getElementById('ppFocusText').innerHTML=wrapped;
+  document.getElementById('cmFocusDur').textContent=dur>0?'⏱ '+fmtDur(dur):'';
+  setFocusAnim(running);
+}
+
+// re-wrap on user edit
+document.addEventListener('DOMContentLoaded',function(){
+  var el=document.getElementById('cmFocusText');
+  if(el) el.addEventListener('blur',function(){
+    var raw=(el.innerText||el.textContent||'').trim();
+    var wrapped=wrapChars(raw);
+    el.innerHTML=wrapped;
+    document.getElementById('ppFocusText').innerHTML=wrapped;
+    setFocusAnim(running);
+  });
+});
+
+/* ─────────────────────────────────
+   CLASS BAR
+───────────────────────────────── */
+function updateClassBar(){
+  var sv=document.getElementById('classStart').value, ev=document.getElementById('classEnd').value;
+  if(!sv||!ev)return;
+  var now=new Date(), ds=now.toISOString().slice(0,10);
+  var s=new Date(ds+'T'+sv), e=new Date(ds+'T'+ev);
+  var frac=Math.max(0,Math.min(1,(now-s)/(e-s)));
+  var fill=frac*100+'%';
+  document.getElementById('cmBarFill').style.width=fill;
+  document.getElementById('ppBarFill').style.width=fill;
+  document.getElementById('cmBarStart').textContent=sv;document.getElementById('cmBarEnd').textContent=ev;
+  var leftMs=Math.max(0,e-now), leftMin=Math.ceil(leftMs/60000);
+  var lbl=leftMs<=0?'¡Clase terminada!':leftMin+' min restantes';
+  var lel=document.getElementById('cmBarLeft');
+  lel.textContent=lbl;lel.className='cm-bar-left'+(leftMin<=10&&leftMs>0?' urgent':'');
+  var ppbl=document.getElementById('ppBarLeft');
+  ppbl.textContent=lbl;ppbl.className='popup-bar-left'+(leftMin<=10&&leftMs>0?' urgent':'');
+}
+
+/* ─────────────────────────────────
+   QUEUE
+───────────────────────────────── */
+function renderQueue(){
+  var q=document.getElementById('cmQueue');q.innerHTML='';
+  cards.forEach(function(card,i){
+    var s=cmStates[i]||'pending';
+    var el=document.createElement('div');
+    el.className='cm-qcard'+(s==='active'?' active-q':s==='done'?' done-q':'');
+    var num=document.createElement('div');num.className='cm-qcard-num';
+    num.textContent=(s==='done'?'✓ ':'')+'Act. '+(i+1);
+    var txt=document.createElement('div');txt.className='cm-qcard-text';txt.textContent=card.title||'—';
+    el.appendChild(num);el.appendChild(txt);
+    if(card.dur>0){var d=document.createElement('div');d.className='cm-qcard-dur';d.textContent='⏱ '+fmtDur(card.dur);el.appendChild(d);}
+    el.onclick=(function(idx,c){return function(){
+      if(cmStates[idx]==='done')return;
+      for(var j=0;j<idx;j++)cmStates[j]='done';
+      cmActive=idx;cmStates[idx]='active';
+      for(var k=idx+1;k<cards.length;k++){if(cmStates[k]==='active')cmStates[k]='pending';}
+      clearInterval(iv);running=false;
+      document.getElementById('cmGoBtn').textContent='▶';document.getElementById('ppGoBtn').textContent='▶';
+      total=c.dur>0?c.dur:300;remaining=total;
+      updateBothTimers();setFocusContent(c.title,c.dur);renderQueue();
+    };})(i,card);
+    q.appendChild(el);
+  });
+}
+
+/* ─────────────────────────────────
+   DISMISS DONE
+───────────────────────────────── */
+function cmDismiss(){
+  document.getElementById('cmDone').classList.remove('show');
+  if(cmActive<cards.length){
+    cmStates[cmActive]='done';cmActive++;
+    if(cmActive<cards.length){
+      cmStates[cmActive]='active';
+      total=cards[cmActive].dur>0?cards[cmActive].dur:300;remaining=total;
+      updateBothTimers();setFocusContent(cards[cmActive].title,cards[cmActive].dur);
+    } else {setFocusContent('¡Todo listo! 🎊',0);}
+    renderQueue();
+  }
+}
+
+/* ─────────────────────────────────
+   START CLASS
+───────────────────────────────── */
+function startClass(){
+  if(!cards.length){toast('Agrega al menos una actividad 😊');return;}
+  cmStates=cards.map(function(){return 'pending';});
+  cmActive=0;cmStates[0]='active';
+  total=cards[0].dur>0?cards[0].dur:300;remaining=total;
+  running=false;if(iv)clearInterval(iv);
+  document.getElementById('cmGoBtn').textContent='▶';
+  document.getElementById('ppGoBtn').textContent='▶';
+  document.getElementById('cmClassName').textContent=document.getElementById('className').value||'Clase';
+  updateClassBar();updateBothTimers();renderQueue();
+  setFocusContent(cards[0].title,cards[0].dur);
+  document.getElementById('editMode').classList.add('hidden');
+  document.getElementById('classMode').classList.remove('hidden');
+  document.getElementById('popupMode').classList.add('hidden');
+  if(cmBarIv)clearInterval(cmBarIv);
+  cmBarIv=setInterval(updateClassBar,15000);
+}
+
+function exitClass(){
+  clearInterval(iv);running=false;if(cmBarIv)clearInterval(cmBarIv);
+  document.getElementById('classMode').classList.add('hidden');
+  document.getElementById('popupMode').classList.add('hidden');
+  document.getElementById('editMode').classList.remove('hidden');
+}
+
+/* ─────────────────────────────────
+   POPUP WINDOW
+───────────────────────────────── */
+function openPopup(){
+  // Encode current state into URL params so popup can show current activity
+  var name=encodeURIComponent(document.getElementById('cmClassName').textContent||'Clase');
+  var start=document.getElementById('classStart').value;
+  var end=document.getElementById('classEnd').value;
+  var focusText=encodeURIComponent((document.getElementById('cmFocusText').innerText||document.getElementById('cmFocusText').textContent||'').trim());
+  var params='?popup=1&name='+name+'&start='+start+'&end='+end+'&focus='+focusText+'&dur='+total;
+  var popup=window.open(window.location.href+params,'timerPopup',
+    'width=400,height=560,resizable=yes,scrollbars=no,toolbar=no,menubar=no,location=no,status=no');
+  if(!popup){toast('⚠️ Activa los pop-ups para este archivo en tu navegador');}
+  else toast('📌 Mini ventana abierta — arrástrala a una esquina');
+}
+
+/* ─────────────────────────────────
+   POPUP MODE (when opened as popup)
+───────────────────────────────── */
+(function(){
+  var params=new URLSearchParams(window.location.search);
+  if(params.get('popup')!=='1')return;
+
+  // hide everything except popupMode
+  document.getElementById('editMode').classList.add('hidden');
+  document.getElementById('classMode').classList.add('hidden');
+  document.getElementById('popupMode').classList.remove('hidden');
+
+  // restore state from params
+  var focusTxt=decodeURIComponent(params.get('focus')||'—');
+  var dur=parseInt(params.get('dur')||'300');
+  var start=params.get('start')||'08:00';
+  var end=params.get('end')||'09:30';
+
+  total=dur;remaining=dur;
+  document.getElementById('ppFocusText').innerHTML=wrapChars(focusTxt);
+  document.getElementById('ppFocusText').classList.add('bouncing');
+
+  // fake classStart/End for bar
+  document.getElementById('classStart').value=start;
+  document.getElementById('classEnd').value=end;
+  updateClassBar();
+  updateBothTimers();
+
+  // update bar every 15s
+  setInterval(updateClassBar,15000);
+
+  // title
+  document.title='⏱ '+decodeURIComponent(params.get('name')||'Timer');
+})();
+
+/* ─────────────────────────────────
+   INIT
+───────────────────────────────── */
+cards=[
+  {title:'Inicio / Bienvenida',dur:60},
+  {title:'Repaso del día anterior',dur:0},
+  {title:'Presentación del tema',dur:0},
+  {title:'Actividad práctica',dur:0},
+  {title:'Cierre y reflexión',dur:0},
+];
+renderGrid();
+renderSaved();
+</script>
+</body>
+</html>
