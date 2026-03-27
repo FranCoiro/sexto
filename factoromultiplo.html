@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Factor o Múltiplo</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(160deg, #e0f2fe 0%, #f0fdf4 50%, #fef9c3 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+  .titulo-juego { font-size: 2rem; font-weight: 800; color: #1e293b; text-align: center; line-height: 1.2; }
+  .subtitulo-juego { font-size: 0.95rem; color: #64748b; text-align: center; }
+  .modos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; width: 100%; max-width: 480px; }
+  .modo-btn {
+    border-radius: 20px; padding: 2rem 1.5rem;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    cursor: pointer; border: 2.5px solid transparent;
+    transition: transform 0.15s, box-shadow 0.15s; user-select: none;
+  }
+  .modo-btn:hover { transform: translateY(-4px); }
+  .modo-aleatorio { background: linear-gradient(135deg, #dbeafe, #eff6ff); border-color: #93c5fd; box-shadow: 0 6px 20px rgba(37,99,235,0.15); }
+  .modo-elijo { background: linear-gradient(135deg, #d1fae5, #f0fdf4); border-color: #6ee7b7; box-shadow: 0 6px 20px rgba(5,150,105,0.15); }
+  .modo-icono { font-size: 2.8rem; line-height: 1; }
+  .modo-titulo { font-size: 1rem; font-weight: 700; color: #1e293b; }
+  .modo-desc { font-size: 0.78rem; color: #64748b; text-align: center; }
+
+  #pantalla-elegir { display: none; flex-direction: column; align-items: center; gap: 1.2rem; animation: aparecer 0.3s ease; }
+  .elegir-titulo { font-size: 1.2rem; font-weight: 700; color: #1e293b; text-align: center; }
+  .numeros-scroll { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 520px; max-height: 300px; overflow-y: auto; padding: 4px; }
+  .num-chip {
+    width: 44px; height: 44px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    background: white; border: 2px solid #e2e8f0; color: #334155;
+    transition: transform 0.1s, background 0.1s;
+  }
+  .num-chip:hover { background: #dbeafe; border-color: #93c5fd; transform: scale(1.1); }
+  .btn-volver { font-size: 13px; color: #94a3b8; background: none; border: none; cursor: pointer; text-decoration: underline; }
+  .btn-volver:hover { color: #64748b; }
+
+  #pantalla-juego { display: none; flex-direction: column; align-items: center; gap: 1rem; width: 100%; max-width: 820px; animation: aparecer 0.3s ease; }
+  .juego-header { display: flex; align-items: center; justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 8px; }
+  .juego-titulo { font-size: 1rem; font-weight: 600; color: #334155; }
+  .btn-nuevo { padding: 8px 18px; border-radius: 10px; border: 2px solid #c4b5fd; background: #f5f3ff; color: #6d28d9; font-size: 13px; font-weight: 700; cursor: pointer; transition: background 0.15s, transform 0.1s; }
+  .btn-nuevo:hover { background: #ede9fe; transform: scale(1.04); }
+
+  .layout { display: flex; gap: 2.5rem; align-items: center; flex-wrap: wrap; justify-content: center; width: 100%; }
+
+  .numero-principal { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .btn-central {
+    width: 130px; height: 130px; border-radius: 50%;
+    background: radial-gradient(circle at 38% 32%, #c4b5fd, #7c3aed 60%, #4c1d95);
+    border: 3px solid rgba(196,181,253,0.7);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 52px; font-weight: 800; color: white;
+    cursor: pointer;
+    box-shadow: 0 8px 32px rgba(124,58,237,0.35), inset 0 -4px 12px rgba(76,29,149,0.4), inset 0 4px 10px rgba(255,255,255,0.25);
+    animation: flotar 3s ease-in-out infinite;
+    user-select: none; transition: transform 0.15s; position: relative;
+  }
+  .btn-central::before {
+    content: ''; position: absolute; top: 12%; left: 18%;
+    width: 30%; height: 22%; background: rgba(255,255,255,0.45);
+    border-radius: 50%; filter: blur(3px); pointer-events: none;
+  }
+  .btn-central:hover { transform: scale(1.07); }
+  @keyframes flotar { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-7px); } }
+
+  .panel-central { display: none; background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 14px 16px; min-width: 210px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); animation: aparecer 0.2s ease; }
+  .panel-central.visible { display: block; }
+  .panel-titulo { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 7px; }
+  .casita { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .par { background: #f3f0ff; border: 1px solid #c4b5fd; border-radius: 8px; padding: 4px 10px; font-size: 13px; font-weight: 600; color: #6d28d9; }
+  .multiplos-tira { display: flex; flex-wrap: wrap; gap: 5px; }
+  .mult-chip { min-width: 36px; height: 36px; border-radius: 8px; padding: 0 6px; background: #ecfdf5; border: 1px solid #6ee7b7; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #065f46; }
+
+  .burbujas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .burbuja-wrap { display: flex; flex-direction: column; align-items: center; gap: 7px; }
+  .burbuja {
+    width: 84px; height: 84px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; font-weight: 800;
+    cursor: pointer; user-select: none; position: relative; transition: transform 0.15s;
+  }
+  .burbuja:hover { transform: scale(1.1); }
+  .burbuja::before {
+    content: ''; position: absolute; top: 12%; left: 18%;
+    width: 30%; height: 22%; background: rgba(255,255,255,0.55);
+    border-radius: 50%; filter: blur(3px); pointer-events: none;
+  }
+  .bc0 { background: radial-gradient(circle at 38% 32%, #6ee7b7, #059669 65%, #064e3b); border: 2px solid rgba(167,243,208,0.8); box-shadow: 0 8px 24px rgba(5,150,105,0.3), inset 0 -3px 8px rgba(6,78,59,0.35), inset 0 3px 8px rgba(255,255,255,0.2); animation: flotar 3.2s ease-in-out infinite; color: white; }
+  .bc1 { background: radial-gradient(circle at 38% 32%, #93c5fd, #2563eb 65%, #1e3a8a); border: 2px solid rgba(191,219,254,0.8); box-shadow: 0 8px 24px rgba(37,99,235,0.3), inset 0 -3px 8px rgba(30,58,138,0.35), inset 0 3px 8px rgba(255,255,255,0.2); animation: flotar 2.8s ease-in-out infinite 0.4s; color: white; }
+  .bc2 { background: radial-gradient(circle at 38% 32%, #d1d5db, #6b7280 65%, #374151); border: 2px solid rgba(229,231,235,0.8); box-shadow: 0 8px 24px rgba(107,114,128,0.3), inset 0 -3px 8px rgba(55,65,81,0.35), inset 0 3px 8px rgba(255,255,255,0.2); animation: flotar 3.5s ease-in-out infinite 0.8s; color: white; }
+  .bc3 { background: radial-gradient(circle at 38% 32%, #fde68a, #d97706 65%, #92400e); border: 2px solid rgba(253,230,138,0.8); box-shadow: 0 8px 24px rgba(217,119,6,0.35), inset 0 -3px 8px rgba(146,64,14,0.35), inset 0 3px 8px rgba(255,255,255,0.2); animation: flotar 3s ease-in-out infinite 0.2s, brillar 1.8s ease-in-out infinite; color: white; }
+  @keyframes brillar { 0%, 100% { box-shadow: 0 8px 24px rgba(217,119,6,0.35), inset 0 -3px 8px rgba(146,64,14,0.35), inset 0 3px 8px rgba(255,255,255,0.2); } 50% { box-shadow: 0 8px 40px rgba(251,191,36,0.7), inset 0 -3px 8px rgba(146,64,14,0.35), inset 0 3px 8px rgba(255,255,255,0.2); } }
+
+  .badge-misterio { position: absolute; top: -3px; right: -3px; width: 22px; height: 22px; background: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: white; border: 2px solid white; animation: pulso-badge 1.2s ease-in-out infinite; z-index: 2; }
+  @keyframes pulso-badge { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.25); } }
+
+  .etiqueta { font-size: 11px; font-weight: 700; min-height: 16px; text-align: center; text-transform: uppercase; letter-spacing: 0.05em; }
+  .et-factor { color: #059669; } .et-multiplo { color: #2563eb; } .et-ninguno { color: #6b7280; } .et-ambos { color: #d97706; }
+
+  #panel { width: 100%; max-width: 820px; min-height: 60px; }
+  .resp-box { border-radius: 14px; padding: 12px 20px; font-size: 15px; font-weight: 700; text-align: center; animation: aparecer 0.2s ease; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+  .rf { background: #ecfdf5; color: #065f46; border: 1.5px solid #6ee7b7; }
+  .rm { background: #eff6ff; color: #1e3a8a; border: 1.5px solid #93c5fd; }
+  .rn { background: #f9fafb; color: #374151; border: 1.5px solid #d1d5db; }
+
+  .misterio-panel { background: white; border: 1.5px solid #fde68a; border-radius: 16px; padding: 16px 20px; box-shadow: 0 8px 24px rgba(217,119,6,0.12); animation: aparecer 0.25s ease; }
+  .misterio-titulo { text-align: center; margin-bottom: 12px; }
+  .signo { font-size: 28px; color: #d97706; animation: pulsoS 0.9s infinite alternate; display: inline-block; }
+  @keyframes pulsoS { from { opacity:0.2; } to { opacity:1; } }
+
+  .opciones-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .opcion-card { border-radius: 12px; padding: 10px 12px; }
+  .oa { background: #f0fdf4; border: 1.5px solid #6ee7b7; }
+  .ob { background: #fef2f2; border: 1.5px solid #fca5a5; }
+  .opcion-titulo { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
+  .oa .opcion-titulo { color: #059669; } .ob .opcion-titulo { color: #dc2626; }
+  .opcion-texto { font-size: 13px; color: #374151; }
+
+  .btns-opcion { display: flex; gap: 10px; justify-content: center; margin-bottom: 10px; }
+  .btn-op { padding: 9px 22px; border-radius: 10px; border: 2px solid; font-size: 14px; font-weight: 700; cursor: pointer; transition: transform 0.1s, background 0.15s; }
+  .btn-op:hover { transform: scale(1.05); }
+  .btn-a { border-color: #059669; color: #065f46; background: #f0fdf4; } .btn-a:hover { background: #d1fae5; }
+  .btn-b { border-color: #dc2626; color: #7f1d1d; background: #fef2f2; } .btn-b:hover { background: #fee2e2; }
+
+  .correcto-box { background: #f0fdf4; color: #065f46; border-radius: 12px; padding: 10px 14px; font-size: 14px; font-weight: 600; border: 1.5px solid #6ee7b7; animation: aparecer 0.2s ease; }
+  .error-box { background: #fef2f2; color: #7f1d1d; border-radius: 12px; padding: 10px 14px; font-size: 14px; border: 1.5px solid #fca5a5; animation: aparecer 0.2s ease; }
+
+  @keyframes aparecer { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+
+  .pie-juego { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; justify-content: center; }
+  .btn-inicio { font-size: 12px; color: #94a3b8; background: none; border: none; cursor: pointer; text-decoration: underline; }
+  .btn-inicio:hover { color: #64748b; }
+</style>
+</head>
+<body>
+
+<div id="pantalla-inicio" style="display:flex;flex-direction:column;align-items:center;gap:1.5rem;animation:aparecer 0.3s ease;">
+  <div>
+    <p class="titulo-juego">Factor o Múltiplo</p>
+    <p class="subtitulo-juego">¿Cómo se relacionan estos números?</p>
+  </div>
+  <div class="modos-grid">
+    <div class="modo-btn modo-aleatorio" onclick="iniciarAleatorio()">
+      <div class="modo-icono">🎲</div>
+      <div class="modo-titulo">Aleatorio</div>
+      <div class="modo-desc">El juego elige el número por ti</div>
+    </div>
+    <div class="modo-btn modo-elijo" onclick="mostrarElegir()">
+      <div class="modo-icono">🎯</div>
+      <div class="modo-titulo">Yo elijo</div>
+      <div class="modo-desc">Tú decides el número central</div>
+    </div>
+  </div>
+</div>
+
+<div id="pantalla-elegir">
+  <p class="elegir-titulo">Elige el número central</p>
+  <div class="numeros-scroll" id="numeros-scroll"></div>
+  <button class="btn-volver" onclick="volverInicio()">← volver</button>
+</div>
+
+<div id="pantalla-juego">
+  <div class="juego-header">
+    <p class="juego-titulo" id="juego-titulo"></p>
+    <button class="btn-nuevo" onclick="nuevoRound()">nuevo número ↺</button>
+  </div>
+  <div class="layout">
+    <div class="numero-principal">
+      <div class="btn-central" id="btn-central" onclick="toggleCentral()">
+        <span id="num-central-txt">?</span>
+      </div>
+      <div class="panel-central" id="panel-central">
+        <p class="panel-titulo">Factores</p>
+        <div class="casita" id="casita-central"></div>
+        <p class="panel-titulo">Primeros 10 múltiplos</p>
+        <div class="multiplos-tira" id="multiplos-central"></div>
+      </div>
+    </div>
+    <div class="burbujas-grid" id="burbujas-grid"></div>
+  </div>
+  <div id="panel"></div>
+  <div class="pie-juego">
+    <button class="btn-inicio" onclick="volverInicio()">← inicio</button>
+  </div>
+</div>
+
+<script>
+let modoActual = 'aleatorio';
+let numeroCentral = 1;
+let burbujas = [];
+let misterioIdx = 3;
+let misterioData = {};
+
+function mostrarPantalla(id) {
+  ['pantalla-inicio','pantalla-elegir','pantalla-juego'].forEach(p => {
+    document.getElementById(p).style.display = 'none';
+  });
+  document.getElementById(id).style.display = 'flex';
+}
+
+function volverInicio() { mostrarPantalla('pantalla-inicio'); }
+
+function mostrarElegir() {
+  const scroll = document.getElementById('numeros-scroll');
+  scroll.innerHTML = '';
+  for (let i = 2; i <= 100; i++) {
+    const chip = document.createElement('div');
+    chip.className = 'num-chip';
+    chip.textContent = i;
+    chip.onclick = () => iniciarConNumero(i);
+    scroll.appendChild(chip);
+  }
+  mostrarPantalla('pantalla-elegir');
+}
+
+function iniciarAleatorio() {
+  modoActual = 'aleatorio';
+  const n = Math.floor(Math.random() * 49) + 2;
+  iniciarConNumero(n);
+}
+
+function iniciarConNumero(n) {
+  numeroCentral = n;
+  mostrarPantalla('pantalla-juego');
+  document.getElementById('juego-titulo').textContent = 'Número central: ' + n;
+  construirJuego(n);
+}
+
+function nuevoRound() {
+  if (modoActual === 'aleatorio') iniciarAleatorio();
+  else iniciarConNumero(numeroCentral);
+}
+
+function factoresDe(n) {
+  const f = [];
+  for (let i = 1; i <= n; i++) { if (n % i === 0) f.push(i); }
+  return f;
+}
+
+function esFactor(b, c) { return Number.isInteger(c / b) && c % b === 0; }
+function esMultiplo(b, c) { return Number.isInteger(b / c) && b % c === 0; }
+
+function clsReal(b, c) {
+  const f = esFactor(b, c);
+  const m = esMultiplo(b, c);
+  if (f && m) return 'ambos';
+  if (f) return 'factor';
+  if (m) return 'multiplo';
+  return 'ninguno';
+}
+
+// Genera el número conflicto: siempre un factor real o múltiplo real del central
+// y construye las dos opciones sin decimales
+function generarConflicto(central) {
+  const fs = factoresDe(central).filter(f => f > 1 && f < central);
+  const mults = [];
+  for (let i = 2; i <= 10; i++) {
+    if (central * i <= 100) mults.push(central * i);
+  }
+
+  const candidatos = [];
+
+  // Factores reales → conflicto: decir que es múltiplo, ambos o ninguno
+  fs.forEach(f => {
+    candidatos.push({ num: f, clsCorrecta: 'factor' });
+  });
+
+  // Múltiplos reales → conflicto: decir que es factor, ambos o ninguno
+  mults.forEach(m => {
+    candidatos.push({ num: m, clsCorrecta: 'multiplo' });
+  });
+
+  if (candidatos.length === 0) {
+    // fallback: usar el doble del central si cabe, sino la mitad
+    if (central * 2 <= 100) return generarOpcionesConflicto(central * 2, 'multiplo', central);
+    return null;
+  }
+
+  const elegido = candidatos[Math.floor(Math.random() * candidatos.length)];
+  return generarOpcionesConflicto(elegido.num, elegido.clsCorrecta, central);
+}
+
+function generarOpcionesConflicto(num, clsCorrecta, central) {
+  // Opciones incorrectas tentadoras según la correcta
+  const mapaIncorrectas = {
+    factor:   ['multiplo', 'ambos', 'ninguno'],
+    multiplo: ['factor',   'ambos', 'ninguno'],
+    ambos:    ['factor',   'multiplo', 'ninguno'],
+    ninguno:  ['factor',   'multiplo', 'ambos']
+  };
+
+  const incorrectas = mapaIncorrectas[clsCorrecta];
+  const incorrecta = incorrectas[Math.floor(Math.random() * incorrectas.length)];
+
+  const labels = {
+    factor:   'Es factor',
+    multiplo: 'Es múltiplo',
+    ambos:    'Es ambos (factor y múltiplo)',
+    ninguno:  'Ninguno de los dos'
+  };
+
+  // Razones sin decimales
+  const razones = {};
+  if (clsCorrecta === 'factor') {
+    razones[clsCorrecta] = `${num} × ${central / num} = ${central}`;
+  } else if (clsCorrecta === 'multiplo') {
+    razones[clsCorrecta] = `${central} × ${num / central} = ${num}`;
+  } else if (clsCorrecta === 'ambos') {
+    razones[clsCorrecta] = `${num} × ${central/num} = ${central} y ${central} × ${num/central} = ${num}`;
+  } else {
+    razones[clsCorrecta] = `No divide ni es múltiplo de ${central}`;
+  }
+
+  // Razón incorrecta tentadora (también sin decimales, solo la etiqueta)
+  razones[incorrecta] = labels[incorrecta];
+
+  const correctaEnA = Math.random() > 0.5;
+  return {
+    num,
+    clsCorrecta,
+    correctaLetra: correctaEnA ? 'A' : 'B',
+    a: {
+      label: correctaEnA ? labels[clsCorrecta] : labels[incorrecta],
+      razon: correctaEnA ? razones[clsCorrecta] : razones[incorrecta]
+    },
+    b: {
+      label: correctaEnA ? labels[incorrecta] : labels[clsCorrecta],
+      razon: correctaEnA ? razones[incorrecta] : razones[clsCorrecta]
+    }
+  };
+}
+
+function generarBurbujas(central) {
+  const conflicto = generarConflicto(central);
+  const nums = new Set();
+  if (conflicto) nums.add(conflicto.num);
+
+  // 1 factor claro (distinto al conflicto)
+  const fs = factoresDe(central).filter(f => f > 1 && f < central && f !== (conflicto ? conflicto.num : -1));
+  if (fs.length > 0) nums.add(fs[Math.floor(Math.random() * fs.length)]);
+
+  // 1 número sin relación
+  let intentos = 0;
+  while (nums.size < 3 && intentos < 300) {
+    const r = Math.floor(Math.random() * 98) + 2;
+    if (r !== central && clsReal(r, central) === 'ninguno') nums.add(r);
+    intentos++;
+  }
+
+  // Rellenar hasta 4
+  intentos = 0;
+  while (nums.size < 4 && intentos < 300) {
+    const r = Math.floor(Math.random() * 98) + 2;
+    if (r !== central) nums.add(r);
+    intentos++;
+  }
+
+  let arr = Array.from(nums).slice(0, 4);
+  while (arr.length < 4) arr.push(arr[0]);
+
+  // Asegurar que el conflicto esté en posición 3 (índice misterioIdx)
+  if (conflicto) {
+    const idx = arr.indexOf(conflicto.num);
+    if (idx !== -1 && idx !== 3) {
+      [arr[idx], arr[3]] = [arr[3], arr[idx]];
+    }
+  }
+
+  return { arr, conflicto };
+}
+
+function construirJuego(central) {
+  document.getElementById('num-central-txt').textContent = central;
+  document.getElementById('panel-central').classList.remove('visible');
+  document.getElementById('panel').innerHTML = '';
+
+  const fs = factoresDe(central);
+  const pares = [];
+  for (let i = 0; i < fs.length; i++) {
+    const a = fs[i], b = central / a;
+    if (a <= b) pares.push([a, b]);
+  }
+  document.getElementById('casita-central').innerHTML =
+    pares.map(p => `<div class="par">${p[0]} × ${p[1]}</div>`).join('');
+
+  const mults = [];
+  for (let i = 1; i <= 10; i++) mults.push(central * i);
+  document.getElementById('multiplos-central').innerHTML =
+    mults.map(m => `<div class="mult-chip">${m}</div>`).join('');
+
+  const { arr, conflicto } = generarBurbujas(central);
+  burbujas = arr;
+  misterioData = conflicto;
+  misterioIdx = conflicto ? arr.indexOf(conflicto.num) : 3;
+
+  const clases = ['bc0','bc1','bc2','bc3'];
+  const delays = [0, 0.4, 0.8, 0.2];
+  const grid = document.getElementById('burbujas-grid');
+  grid.innerHTML = '';
+
+  arr.forEach((num, i) => {
+    const esMisterio = (i === misterioIdx);
+    const wrap = document.createElement('div');
+    wrap.className = 'burbuja-wrap';
+    wrap.innerHTML = `
+      <div class="burbuja ${clases[i]}" onclick="presionarBurbuja(${i})" style="animation-delay:${delays[i]}s">
+        ${num}
+        ${esMisterio ? '<div class="badge-misterio">!</div>' : ''}
+      </div>
+      <div class="etiqueta" id="et${i}"></div>
+    `;
+    grid.appendChild(wrap);
+  });
+}
+
+function toggleCentral() {
+  document.getElementById('panel-central').classList.toggle('visible');
+}
+
+function presionarBurbuja(i) {
+  const num = burbujas[i];
+  const panel = document.getElementById('panel');
+  const cls = clsReal(num, numeroCentral);
+
+  if (i === misterioIdx && misterioData) {
+    const d = misterioData;
+    panel.innerHTML = `
+      <div class="misterio-panel">
+        <div class="misterio-titulo">
+          <span class="signo">?</span><span class="signo" style="animation-delay:0.3s">?</span><span class="signo" style="animation-delay:0.6s">?</span>
+          <p style="font-size:14px;color:#64748b;margin:8px 0 0;">¿Qué es el <strong>${num}</strong> respecto al ${numeroCentral}?</p>
+        </div>
+        <div class="opciones-grid">
+          <div class="opcion-card oa">
+            <p class="opcion-titulo">Opción A</p>
+            <p class="opcion-texto">${d.a.label}<br><span style="font-size:12px;color:#6b7280;">${d.a.razon}</span></p>
+          </div>
+          <div class="opcion-card ob">
+            <p class="opcion-titulo">Opción B</p>
+            <p class="opcion-texto">${d.b.label}<br><span style="font-size:12px;color:#6b7280;">${d.b.razon}</span></p>
+          </div>
+        </div>
+        <div class="btns-opcion">
+          <button class="btn-op btn-a" onclick="responderMisterio('A')">Es la A</button>
+          <button class="btn-op btn-b" onclick="responderMisterio('B')">Es la B</button>
+        </div>
+        <div id="fb-misterio"></div>
+      </div>
+    `;
+  } else {
+    const textos = {
+      factor:   { c:'rf', t:'Es factor' },
+      multiplo: { c:'rm', t:'Es múltiplo' },
+      ninguno:  { c:'rn', t:'Ninguno' },
+      ambos:    { c:'rf', t:'Es factor y múltiplo' }
+    };
+    const t = textos[cls];
+    panel.innerHTML = `<div class="resp-box ${t.c}">${t.t}</div>`;
+    setTimeout(() => {
+      const e = document.getElementById('et' + i);
+      e.textContent = t.t.toLowerCase();
+      e.className = 'etiqueta et-' + cls;
+    }, 300);
+  }
+}
+
+function responderMisterio(opcion) {
+  const fb = document.getElementById('fb-misterio');
+  const d = misterioData;
+  if (opcion === d.correctaLetra) {
+    fb.innerHTML = `<div class="correcto-box">¡Correcto!</div>`;
+    setTimeout(() => {
+      const e = document.getElementById('et' + misterioIdx);
+      const labels = { factor:'es factor', multiplo:'es múltiplo', ambos:'ambos', ninguno:'ninguno' };
+      e.textContent = labels[d.clsCorrecta];
+      e.className = 'etiqueta et-' + d.clsCorrecta;
+    }, 400);
+  } else {
+    fb.innerHTML = `<div class="error-box">Intenta de nuevo.</div>`;
+  }
+}
+
+mostrarPantalla('pantalla-inicio');
+</script>
+</body>
+</html>
