@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Árbol de Factores</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(160deg, #f0fdf4 0%, #fef9c3 50%, #f0f9ff 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.2rem;
+  }
+
+  h1 { font-size: 1.5rem; font-weight: 800; color: #1e293b; text-align: center; margin-bottom: 0.2rem; }
+  .sub { font-size: 0.85rem; color: #64748b; text-align: center; margin-bottom: 1rem; }
+
+  .input-wrap { display: flex; gap: 10px; justify-content: center; margin-bottom: 1rem; flex-wrap: wrap; }
+  input[type=number] {
+    width: 120px; padding: 10px 14px;
+    border-radius: 12px; border: 2px solid #6ee7b7;
+    font-size: 1.4rem; font-weight: 700; text-align: center;
+    color: #059669; outline: none; background: white;
+  }
+  .btn {
+    padding: 10px 20px; border-radius: 12px;
+    border: none; font-size: 0.95rem; font-weight: 700;
+    cursor: pointer; transition: background 0.15s, transform 0.1s;
+  }
+  .btn-verde { background: #059669; color: white; }
+  .btn-verde:hover { background: #047857; transform: scale(1.04); }
+  .btn-gris { background: #e2e8f0; color: #334155; }
+  .btn-gris:hover { background: #cbd5e1; }
+
+  .leyenda {
+    display: flex; gap: 16px; justify-content: center;
+    margin-bottom: 0.8rem; flex-wrap: wrap;
+  }
+  .ley-item { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #475569; }
+  .ley-dot { width: 14px; height: 14px; border-radius: 50%; }
+
+  #arbol-container {
+    width: 100%; max-width: 900px;
+    overflow-x: auto; overflow-y: visible;
+    position: relative;
+  }
+
+  svg#arbol-svg { overflow: visible; display: block; margin: 0 auto; }
+
+  .nodo-group { cursor: default; }
+  .nodo-group.clickeable { cursor: pointer; }
+  .nodo-circle { transition: fill 0.3s; }
+  .nodo-group.clickeable .nodo-circle:hover { opacity: 0.85; }
+
+  .nodo-text {
+    font-family: 'Segoe UI', sans-serif;
+    font-weight: 800; text-anchor: middle;
+    dominant-baseline: central; pointer-events: none;
+    fill: white;
+  }
+
+  /* Inputs en el SVG usando foreignObject */
+  .fo-input {
+    border: 2.5px solid #6d28d9; border-radius: 50%;
+    width: 58px; height: 58px;
+    font-size: 1.1rem; font-weight: 800;
+    text-align: center; color: #6d28d9;
+    background: white; outline: none;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0;
+  }
+  .fo-input:focus { border-color: #059669; color: #059669; }
+  .fo-input.error { border-color: #dc2626; color: #dc2626; animation: shake 0.3s ease; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
+
+  .btn-confirmar {
+    padding: 6px 14px; border-radius: 8px;
+    background: #6d28d9; color: white;
+    border: none; font-size: 0.8rem; font-weight: 700;
+    cursor: pointer; white-space: nowrap;
+  }
+  .btn-confirmar:hover { background: #5b21b6; }
+
+  .resultado-final {
+    width: 100%; max-width: 900px;
+    border-radius: 16px; padding: 16px 20px;
+    text-align: center; margin-top: 1rem;
+    display: none;
+  }
+  .resultado-final.visible { display: block; animation: pop 0.4s ease; }
+  @keyframes pop { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  .rf-verde { background: #dcfce7; border: 2px solid #4ade80; }
+  .rf-titulo { font-size: 1.2rem; font-weight: 800; color: #166534; margin-bottom: 4px; }
+  .rf-formula { font-size: 1.1rem; color: #065f46; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<h1>Árbol de Factores Primos</h1>
+<p class="sub">Toca un número morado para dividirlo en dos factores</p>
+
+<div class="input-wrap">
+  <input type="number" id="num-input" min="2" max="500" placeholder="12" />
+  <button class="btn btn-verde" onclick="iniciar()">Comenzar</button>
+  <button class="btn btn-gris" onclick="reiniciar()">Reiniciar</button>
+</div>
+
+<div class="leyenda">
+  <div class="ley-item"><div class="ley-dot" style="background:#6d28d9;"></div>Toca para dividir</div>
+  <div class="ley-item"><div class="ley-dot" style="background:#059669;"></div>Primo — átomo</div>
+  <div class="ley-item"><div class="ley-dot" style="background:#94a3b8;"></div>Ya dividido</div>
+</div>
+
+<div id="arbol-container">
+  <svg id="arbol-svg"></svg>
+</div>
+
+<div class="resultado-final" id="resultado-final"></div>
+
+<script>
+const R = 32;
+let nodos = [];
+let aristas = [];
+let pendiente = null; // nodo esperando inputs
+
+function esPrimo(n) {
+  if (n < 2) return false;
+  for (let i = 2; i <= Math.sqrt(n); i++) if (n % i === 0) return false;
+  return true;
+}
+
+function reiniciar() {
+  nodos = []; aristas = []; pendiente = null;
+  document.getElementById('arbol-svg').innerHTML = '';
+  document.getElementById('resultado-final').className = 'resultado-final';
+  document.getElementById('resultado-final').innerHTML = '';
+}
+
+function iniciar() {
+  const val = parseInt(document.getElementById('num-input').value);
+  if (!val || val < 2 || val > 500) { alert('Escribe un número entre 2 y 500'); return; }
+  reiniciar();
+  nodos.push({ id: 0, valor: val, x: 0, y: 0, primo: esPrimo(val), dividido: false });
+  layoutYRenderizar();
+}
+
+// Layout: calcular posiciones x,y basadas en estructura del árbol
+function calcularLayout() {
+  // BFS para asignar niveles
+  const levels = {};
+  const queue = [0];
+  const visited = new Set();
+  levels[0] = 0;
+  while (queue.length > 0) {
+    const id = queue.shift();
+    if (visited.has(id)) continue;
+    visited.add(id);
+    const hijos = aristas.filter(a => a.padre === id).map(a => a.hijo);
+    hijos.forEach(h => {
+      levels[h] = levels[id] + 1;
+      queue.push(h);
+    });
+  }
+
+  const maxLevel = Math.max(...Object.values(levels), 0);
+  const levelHeight = 100;
+
+  // Asignar posiciones x usando DFS post-order
+  function asignarX(id, xOffset) {
+    const hijos = aristas.filter(a => a.padre === id).map(a => a.hijo);
+    if (hijos.length === 0) {
+      nodos.find(n => n.id === id).x = xOffset;
+      nodos.find(n => n.id === id).y = levels[id] * levelHeight + R + 10;
+      return xOffset + R * 2.8;
+    }
+    let start = xOffset;
+    let end = xOffset;
+    hijos.forEach(h => { end = asignarX(h, end); });
+    const padre = nodos.find(n => n.id === id);
+    padre.x = (start + end) / 2;
+    padre.y = levels[id] * levelHeight + R + 10;
+    return end;
+  }
+  asignarX(0, R + 10);
+}
+
+function layoutYRenderizar() {
+  calcularLayout();
+  const svg = document.getElementById('arbol-svg');
+  svg.innerHTML = '';
+
+  const maxX = Math.max(...nodos.map(n => n.x)) + R + 10;
+  let maxY = Math.max(...nodos.map(n => n.y)) + R + 60;
+  // Si hay pendiente, agregar espacio extra para inputs + botón + error
+  if (pendiente) maxY = Math.max(...nodos.map(n => n.y)) + R + 220;
+  const svgW = Math.max(maxX, pendiente ? Math.max(...nodos.map(n=>n.x)) + 150 : 400);
+
+  svg.setAttribute('viewBox', `0 0 ${svgW} ${maxY}`);
+  svg.setAttribute('width', svgW);
+  svg.setAttribute('height', maxY);
+
+  // Aristas
+  aristas.forEach(a => {
+    const p = nodos.find(n => n.id === a.padre);
+    const h = nodos.find(n => n.id === a.hijo);
+    if (!p || !h) return;
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', p.x); line.setAttribute('y1', p.y + R);
+    line.setAttribute('x2', h.x); line.setAttribute('y2', h.y - R);
+    line.setAttribute('stroke', '#94a3b8');
+    line.setAttribute('stroke-width', '2');
+    svg.appendChild(line);
+  });
+
+  // Nodos
+  nodos.forEach(nodo => {
+    const tieneHijos = aristas.some(a => a.padre === nodo.id);
+    const esPendiente = pendiente && pendiente.id === nodo.id;
+
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('class', 'nodo-group' + (!nodo.primo && !tieneHijos && !esPendiente ? ' clickeable' : ''));
+
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', nodo.x); circle.setAttribute('cy', nodo.y); circle.setAttribute('r', R);
+    circle.setAttribute('class', 'nodo-circle');
+
+    let color = '#6d28d9';
+    if (nodo.primo) color = '#059669';
+    else if (tieneHijos) color = '#94a3b8';
+    else if (esPendiente) color = '#f59e0b';
+    circle.setAttribute('fill', color);
+
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', nodo.x); text.setAttribute('y', nodo.y);
+    text.setAttribute('class', 'nodo-text');
+    text.setAttribute('font-size', nodo.valor > 99 ? '12' : '15');
+    text.textContent = nodo.valor;
+
+    // Pulso para nodos clickeables
+    if (!nodo.primo && !tieneHijos && !esPendiente) {
+      const pulse = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      pulse.setAttribute('cx', nodo.x); pulse.setAttribute('cy', nodo.y);
+      pulse.setAttribute('r', R + 5);
+      pulse.setAttribute('fill', 'none');
+      pulse.setAttribute('stroke', '#a78bfa');
+      pulse.setAttribute('stroke-width', '2');
+      pulse.setAttribute('opacity', '0.5');
+
+      const anim = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+      anim.setAttribute('attributeName', 'r');
+      anim.setAttribute('values', `${R+5};${R+12};${R+5}`);
+      anim.setAttribute('dur', '1.5s');
+      anim.setAttribute('repeatCount', 'indefinite');
+      pulse.appendChild(anim);
+
+      const anim2 = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+      anim2.setAttribute('attributeName', 'opacity');
+      anim2.setAttribute('values', '0.5;0.1;0.5');
+      anim2.setAttribute('dur', '1.5s');
+      anim2.setAttribute('repeatCount', 'indefinite');
+      pulse.appendChild(anim2);
+
+      g.appendChild(pulse);
+      g.addEventListener('click', () => activarInput(nodo));
+    }
+
+    g.appendChild(circle);
+    g.appendChild(text);
+    svg.appendChild(g);
+
+    // Inputs para nodo pendiente
+    if (esPendiente) {
+      dibujarInputs(svg, nodo, svgW, maxY);
+    }
+  });
+
+  verificarCompleto();
+}
+
+function dibujarInputs(svg, nodo, svgW, maxY) {
+  const yHijo = nodo.y + 100;
+  const xA = nodo.x - 70;
+  const xB = nodo.x + 70;
+
+  // Líneas punteadas hacia los inputs
+  [[xA, yHijo], [xB, yHijo]].forEach(([x, y]) => {
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', nodo.x); line.setAttribute('y1', nodo.y + R);
+    line.setAttribute('x2', x); line.setAttribute('y2', y - R - 2);
+    line.setAttribute('stroke', '#a78bfa');
+    line.setAttribute('stroke-width', '2');
+    line.setAttribute('stroke-dasharray', '5 3');
+    svg.appendChild(line);
+  });
+
+  // ForeignObject izquierdo
+  const foA = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+  foA.setAttribute('x', xA - R - 2); foA.setAttribute('y', yHijo - R - 2);
+  foA.setAttribute('width', (R+2)*2); foA.setAttribute('height', (R+2)*2);
+  const inputA = document.createElement('input');
+  inputA.type = 'number'; inputA.id = 'inp-a';
+  inputA.style.cssText = `width:${(R+2)*2}px;height:${(R+2)*2}px;border:2.5px solid #6d28d9;border-radius:50%;font-size:1.1rem;font-weight:800;text-align:center;color:#6d28d9;background:white;outline:none;padding:0;display:block;`;
+  inputA.placeholder = '?';
+  inputA.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('inp-b').focus(); });
+  foA.appendChild(inputA);
+  svg.appendChild(foA);
+
+  // ForeignObject derecho
+  const foB = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+  foB.setAttribute('x', xB - R - 2); foB.setAttribute('y', yHijo - R - 2);
+  foB.setAttribute('width', (R+2)*2); foB.setAttribute('height', (R+2)*2);
+  const inputB = document.createElement('input');
+  inputB.type = 'number'; inputB.id = 'inp-b';
+  inputB.style.cssText = inputA.style.cssText;
+  inputB.placeholder = '?';
+  inputB.addEventListener('keydown', e => { if (e.key === 'Enter') confirmar(); });
+  foB.appendChild(inputB);
+  svg.appendChild(foB);
+
+  // Botón confirmar
+  const foBtn = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+  const btnW = 110; const btnH = 36;
+  foBtn.setAttribute('x', nodo.x - btnW/2);
+  foBtn.setAttribute('y', yHijo + R + 8);
+  foBtn.setAttribute('width', btnW); foBtn.setAttribute('height', btnH);
+  const btn = document.createElement('button');
+  btn.textContent = '✓ Confirmar';
+  btn.style.cssText = `width:${btnW}px;height:${btnH}px;border-radius:10px;background:#6d28d9;color:white;border:none;font-size:0.85rem;font-weight:700;cursor:pointer;`;
+  btn.onclick = confirmar;
+  foBtn.appendChild(btn);
+  svg.appendChild(foBtn);
+
+  // Mensaje error
+  const foErr = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+  foErr.setAttribute('x', nodo.x - 120); foErr.setAttribute('y', yHijo + R + 52);
+  foErr.setAttribute('width', '240'); foErr.setAttribute('height', '30');
+  foErr.id = 'fo-error';
+  svg.appendChild(foErr);
+
+  setTimeout(() => { inputA.focus(); }, 100);
+}
+
+function activarInput(nodo) {
+  if (pendiente) return;
+  pendiente = nodo;
+  layoutYRenderizar();
+}
+
+function confirmar() {
+  if (!pendiente) return;
+  const a = parseInt(document.getElementById('inp-a').value);
+  const b = parseInt(document.getElementById('inp-b').value);
+  const nodo = pendiente;
+
+  const foErr = document.getElementById('fo-error');
+
+  if (!a || !b || a < 2 || b < 2) {
+    mostrarError(foErr, 'Escribe dos números mayores que 1');
+    return;
+  }
+  if (a * b !== nodo.valor) {
+    mostrarError(foErr, `${a} × ${b} = ${a*b}, no es ${nodo.valor}. Intenta de nuevo.`);
+    return;
+  }
+
+  // Correcto
+  pendiente = null;
+  const idA = nodos.length;
+  const idB = nodos.length + 1;
+  nodos.push({ id: idA, valor: a, primo: esPrimo(a), dividido: false });
+  nodos.push({ id: idB, valor: b, primo: esPrimo(b), dividido: false });
+  aristas.push({ padre: nodo.id, hijo: idA });
+  aristas.push({ padre: nodo.id, hijo: idB });
+  layoutYRenderizar();
+}
+
+function mostrarError(fo, msg) {
+  if (!fo) return;
+  const div = document.createElement('div');
+  div.style.cssText = 'background:#fee2e2;color:#991b1b;border-radius:8px;padding:4px 10px;font-size:0.78rem;font-weight:700;text-align:center;width:240px;';
+  div.textContent = msg;
+  fo.innerHTML = '';
+  fo.appendChild(div);
+}
+
+function verificarCompleto() {
+  const hojas = nodos.filter(n => !aristas.some(a => a.padre === n.id));
+  const todoPrimo = hojas.every(n => n.primo) && nodos.length > 1 && !pendiente;
+
+  const rf = document.getElementById('resultado-final');
+  if (todoPrimo) {
+    const primos = hojas.map(n => n.valor).sort((a,b) => a-b);
+    const conteo = {};
+    primos.forEach(p => conteo[p] = (conteo[p]||0)+1);
+    const formula = Object.entries(conteo)
+      .map(([p,c]) => c > 1 ? p + (c===2?'²':c===3?'³':'^'+c) : p)
+      .join(' × ');
+    rf.className = 'resultado-final rf-verde visible';
+    rf.innerHTML = `<div class="rf-titulo">¡Listo! Los átomos primos del ${nodos[0].valor}:</div><div class="rf-formula">${nodos[0].valor} = ${primos.join(' × ')} = ${formula}</div>`;
+  } else {
+    rf.className = 'resultado-final';
+    rf.innerHTML = '';
+  }
+}
+</script>
+</body>
+</html>
