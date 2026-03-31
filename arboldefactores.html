@@ -14,12 +14,13 @@
     flex-direction: column;
     align-items: center;
     padding: 1.2rem;
+    gap: 1rem;
   }
 
-  h1 { font-size: 1.5rem; font-weight: 800; color: #1e293b; text-align: center; margin-bottom: 0.2rem; }
-  .sub { font-size: 0.85rem; color: #64748b; text-align: center; margin-bottom: 1rem; }
+  h1 { font-size: 1.5rem; font-weight: 800; color: #1e293b; text-align: center; }
+  .sub { font-size: 0.85rem; color: #64748b; text-align: center; }
 
-  .input-wrap { display: flex; gap: 10px; justify-content: center; margin-bottom: 1rem; flex-wrap: wrap; }
+  .input-wrap { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
   input[type=number] {
     width: 120px; padding: 10px 14px;
     border-radius: 12px; border: 2px solid #6ee7b7;
@@ -31,30 +32,83 @@
     border: none; font-size: 0.95rem; font-weight: 700;
     cursor: pointer; transition: background 0.15s, transform 0.1s;
   }
+  .btn:disabled { opacity: 0.35; cursor: default; }
   .btn-verde { background: #059669; color: white; }
-  .btn-verde:hover { background: #047857; transform: scale(1.04); }
+  .btn-verde:hover:not(:disabled) { background: #047857; transform: scale(1.04); }
+  .btn-morado { background: #6d28d9; color: white; }
+  .btn-morado:hover:not(:disabled) { background: #5b21b6; transform: scale(1.04); }
   .btn-gris { background: #e2e8f0; color: #334155; }
   .btn-gris:hover { background: #cbd5e1; }
 
-  .leyenda {
-    display: flex; gap: 16px; justify-content: center;
-    margin-bottom: 0.8rem; flex-wrap: wrap;
+  /* FASE 1 — pares */
+  #fase1 { width: 100%; max-width: 600px; display: none; }
+  .numero-central {
+    font-size: 3rem; font-weight: 900; color: #6d28d9;
+    text-align: center; margin-bottom: 0.5rem;
   }
-  .ley-item { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #475569; }
-  .ley-dot { width: 14px; height: 14px; border-radius: 50%; }
+  .fase1-titulo { font-size: 0.9rem; color: #475569; text-align: center; margin-bottom: 1rem; }
 
-  #arbol-container {
-    width: 100%; max-width: 900px;
-    overflow-x: auto; overflow-y: visible;
-    position: relative;
+  .pares-lista { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1rem; }
+
+  .par-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border-radius: 14px;
+    border: 2px solid #e2e8f0; background: white;
+    transition: border-color 0.3s, background 0.3s;
   }
+  .par-row.correcto { border-color: #4ade80; background: #f0fdf4; }
+  .par-row.incorrecto { border-color: #fca5a5; background: #fef2f2; }
 
+  .par-input {
+    width: 70px; padding: 8px;
+    border-radius: 8px; border: 1.5px solid #c4b5fd;
+    font-size: 1.2rem; font-weight: 700; text-align: center;
+    color: #6d28d9; outline: none; background: white;
+    transition: border-color 0.2s;
+  }
+  .par-input:focus { border-color: #7c3aed; }
+  .par-row.correcto .par-input { border-color: #4ade80; color: #166534; background: #dcfce7; }
+  .par-row.incorrecto .par-input { border-color: #fca5a5; color: #991b1b; }
+
+  .par-sep { font-size: 1.4rem; font-weight: 800; color: #6d28d9; }
+  .par-igual { font-size: 1rem; color: #64748b; margin-left: 4px; }
+  .par-resultado { font-size: 1rem; font-weight: 700; min-width: 40px; }
+  .par-row.correcto .par-resultado { color: #166534; }
+  .par-row.incorrecto .par-resultado { color: #991b1b; }
+  .par-check { font-size: 1.2rem; }
+
+  .agregar-par {
+    text-align: center;
+  }
+  .btn-agregar {
+    padding: 6px 16px; border-radius: 8px;
+    border: 2px dashed #a78bfa; background: transparent;
+    color: #6d28d9; font-size: 0.85rem; font-weight: 700;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .btn-agregar:hover { background: #f5f3ff; }
+
+  .construir-wrap { text-align: center; margin-top: 0.5rem; }
+
+  /* FASE 2 — elegir par */
+  #fase2 { width: 100%; max-width: 600px; display: none; }
+  .elegir-titulo { font-size: 1rem; font-weight: 700; color: #334155; text-align: center; margin-bottom: 0.8rem; }
+  .pares-elegir { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .par-elegir-btn {
+    padding: 12px 20px; border-radius: 14px;
+    border: 2.5px solid #a78bfa; background: #f5f3ff;
+    color: #6d28d9; font-size: 1.1rem; font-weight: 800;
+    cursor: pointer; transition: background 0.15s, transform 0.1s;
+  }
+  .par-elegir-btn:hover { background: #ede9fe; transform: scale(1.05); }
+
+  /* FASE 3 — árbol */
+  #fase3 { width: 100%; max-width: 900px; display: none; }
+  #arbol-container { width: 100%; overflow-x: auto; }
   svg#arbol-svg { overflow: visible; display: block; margin: 0 auto; }
 
-  .nodo-group { cursor: default; }
   .nodo-group.clickeable { cursor: pointer; }
   .nodo-circle { transition: fill 0.3s; }
-  .nodo-group.clickeable .nodo-circle:hover { opacity: 0.85; }
 
   .nodo-text {
     font-family: 'Segoe UI', sans-serif;
@@ -63,69 +117,76 @@
     fill: white;
   }
 
-  /* Inputs en el SVG usando foreignObject */
-  .fo-input {
-    border: 2.5px solid #6d28d9; border-radius: 50%;
-    width: 58px; height: 58px;
-    font-size: 1.1rem; font-weight: 800;
-    text-align: center; color: #6d28d9;
-    background: white; outline: none;
-    display: flex; align-items: center; justify-content: center;
-    padding: 0;
-  }
-  .fo-input:focus { border-color: #059669; color: #059669; }
-  .fo-input.error { border-color: #dc2626; color: #dc2626; animation: shake 0.3s ease; }
-  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
-
-  .btn-confirmar {
-    padding: 6px 14px; border-radius: 8px;
-    background: #6d28d9; color: white;
-    border: none; font-size: 0.8rem; font-weight: 700;
-    cursor: pointer; white-space: nowrap;
-  }
-  .btn-confirmar:hover { background: #5b21b6; }
-
   .resultado-final {
     width: 100%; max-width: 900px;
     border-radius: 16px; padding: 16px 20px;
-    text-align: center; margin-top: 1rem;
-    display: none;
+    text-align: center; display: none;
   }
   .resultado-final.visible { display: block; animation: pop 0.4s ease; }
   @keyframes pop { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
   .rf-verde { background: #dcfce7; border: 2px solid #4ade80; }
   .rf-titulo { font-size: 1.2rem; font-weight: 800; color: #166534; margin-bottom: 4px; }
   .rf-formula { font-size: 1.1rem; color: #065f46; font-weight: 700; }
+
+  .leyenda {
+    display: flex; gap: 16px; justify-content: center;
+    flex-wrap: wrap;
+  }
+  .ley-item { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #475569; }
+  .ley-dot { width: 14px; height: 14px; border-radius: 50%; }
 </style>
 </head>
 <body>
 
 <h1>Árbol de Factores Primos</h1>
-<p class="sub">Toca un número morado para dividirlo en dos factores</p>
+<p class="sub">Primero encontramos todos los pares, luego construimos el árbol</p>
 
 <div class="input-wrap">
   <input type="number" id="num-input" min="2" max="500" placeholder="12" />
-  <button class="btn btn-verde" onclick="iniciar()">Comenzar</button>
+  <button class="btn btn-verde" onclick="iniciarFase1()">Comenzar</button>
   <button class="btn btn-gris" onclick="reiniciar()">Reiniciar</button>
 </div>
 
-<div class="leyenda">
-  <div class="ley-item"><div class="ley-dot" style="background:#6d28d9;"></div>Toca para dividir</div>
-  <div class="ley-item"><div class="ley-dot" style="background:#059669;"></div>Primo — átomo</div>
-  <div class="ley-item"><div class="ley-dot" style="background:#94a3b8;"></div>Ya dividido</div>
+<!-- FASE 1: Pares de factores -->
+<div id="fase1">
+  <div class="numero-central" id="num-central"></div>
+  <div class="fase1-titulo">Escribe todos los pares de factores que puedas encontrar:</div>
+  <div class="pares-lista" id="pares-lista"></div>
+  <div class="agregar-par">
+    <button class="btn-agregar" onclick="agregarPar()">+ Agregar otro par</button>
+  </div>
+  <div class="construir-wrap" style="margin-top:1rem;">
+    <button class="btn btn-morado" id="btn-construir" onclick="iniciarFase2()" disabled>
+      Construir árbol →
+    </button>
+  </div>
 </div>
 
-<div id="arbol-container">
-  <svg id="arbol-svg"></svg>
+<!-- FASE 2: Elegir par para el árbol -->
+<div id="fase2">
+  <div class="elegir-titulo">¿Por cuál par empezamos el árbol?</div>
+  <div class="pares-elegir" id="pares-elegir"></div>
+</div>
+
+<!-- FASE 3: Árbol -->
+<div id="fase3">
+  <div class="leyenda" style="margin-bottom:0.8rem;">
+    <div class="ley-item"><div class="ley-dot" style="background:#6d28d9;"></div>Toca para dividir</div>
+    <div class="ley-item"><div class="ley-dot" style="background:#059669;"></div>Primo — átomo</div>
+    <div class="ley-item"><div class="ley-dot" style="background:#94a3b8;"></div>Ya dividido</div>
+  </div>
+  <div id="arbol-container">
+    <svg id="arbol-svg"></svg>
+  </div>
 </div>
 
 <div class="resultado-final" id="resultado-final"></div>
 
 <script>
+let N = 0;
 const R = 32;
-let nodos = [];
-let aristas = [];
-let pendiente = null; // nodo esperando inputs
+let nodos = [], aristas = [], pendiente = null;
+let paresCorrectos = [];
 
 function esPrimo(n) {
   if (n < 2) return false;
@@ -134,55 +195,149 @@ function esPrimo(n) {
 }
 
 function reiniciar() {
-  nodos = []; aristas = []; pendiente = null;
-  document.getElementById('arbol-svg').innerHTML = '';
+  N = 0; nodos = []; aristas = []; pendiente = null; paresCorrectos = [];
+  ['fase1','fase2','fase3'].forEach(id => document.getElementById(id).style.display = 'none');
   document.getElementById('resultado-final').className = 'resultado-final';
-  document.getElementById('resultado-final').innerHTML = '';
+  document.getElementById('arbol-svg').innerHTML = '';
+  document.getElementById('pares-lista').innerHTML = '';
+  document.getElementById('pares-elegir').innerHTML = '';
 }
 
-function iniciar() {
+// ===== FASE 1 =====
+function iniciarFase1() {
   const val = parseInt(document.getElementById('num-input').value);
   if (!val || val < 2 || val > 500) { alert('Escribe un número entre 2 y 500'); return; }
   reiniciar();
-  nodos.push({ id: 0, valor: val, x: 0, y: 0, primo: esPrimo(val), dividido: false });
+  N = val;
+  document.getElementById('num-central').textContent = N;
+  document.getElementById('fase1').style.display = 'block';
+  agregarPar();
+  agregarPar();
+}
+
+let parCount = 0;
+function agregarPar() {
+  const id = parCount++;
+  const row = document.createElement('div');
+  row.className = 'par-row';
+  row.id = 'par-row-' + id;
+  row.innerHTML = `
+    <input class="par-input" id="pa-${id}" type="number" min="1" placeholder="?" oninput="verificarPar(${id})" />
+    <span class="par-sep">×</span>
+    <input class="par-input" id="pb-${id}" type="number" min="1" placeholder="?" oninput="verificarPar(${id})" />
+    <span class="par-igual">= ?</span>
+    <span class="par-resultado" id="pr-${id}"></span>
+    <span class="par-check" id="pc-${id}"></span>
+  `;
+  document.getElementById('pares-lista').appendChild(row);
+  document.getElementById('pa-' + id).focus();
+}
+
+function verificarPar(id) {
+  const a = parseInt(document.getElementById('pa-' + id).value);
+  const b = parseInt(document.getElementById('pb-' + id).value);
+  const row = document.getElementById('par-row-' + id);
+  const res = document.getElementById('pr-' + id);
+  const check = document.getElementById('pc-' + id);
+
+  if (!a || !b) {
+    row.className = 'par-row';
+    res.textContent = '';
+    check.textContent = '';
+    actualizarBotonConstruir();
+    return;
+  }
+
+  const prod = a * b;
+  res.textContent = '= ' + prod;
+
+  if (prod === N && a > 1 && b > 1) {
+    row.className = 'par-row correcto';
+    check.textContent = '✓';
+  } else if (prod === N && (a === 1 || b === 1)) {
+    row.className = 'par-row incorrecto';
+    check.textContent = '✗';
+    res.textContent = '= ' + prod + ' (no se usa el 1)';
+  } else {
+    row.className = 'par-row incorrecto';
+    check.textContent = '✗';
+  }
+  actualizarBotonConstruir();
+}
+
+function actualizarBotonConstruir() {
+  const rows = document.querySelectorAll('.par-row.correcto');
+  document.getElementById('btn-construir').disabled = rows.length === 0;
+}
+
+// ===== FASE 2 =====
+function iniciarFase2() {
+  const rows = document.querySelectorAll('.par-row.correcto');
+  paresCorrectos = [];
+  rows.forEach(row => {
+    const id = row.id.replace('par-row-', '');
+    const a = parseInt(document.getElementById('pa-' + id).value);
+    const b = parseInt(document.getElementById('pb-' + id).value);
+    if (!paresCorrectos.find(p => p[0]===a && p[1]===b)) paresCorrectos.push([a, b]);
+  });
+
+  document.getElementById('fase1').style.display = 'none';
+  document.getElementById('fase2').style.display = 'block';
+
+  const wrap = document.getElementById('pares-elegir');
+  wrap.innerHTML = '';
+  paresCorrectos.forEach(([a, b]) => {
+    const btn = document.createElement('button');
+    btn.className = 'par-elegir-btn';
+    btn.textContent = N + ' = ' + a + ' × ' + b;
+    btn.onclick = () => iniciarArbol(a, b);
+    wrap.appendChild(btn);
+  });
+}
+
+// ===== FASE 3 — Árbol =====
+function iniciarArbol(a, b) {
+  document.getElementById('fase2').style.display = 'none';
+  document.getElementById('fase3').style.display = 'block';
+  nodos = []; aristas = []; pendiente = null;
+
+  nodos.push({ id: 0, valor: N, primo: esPrimo(N), dividido: false });
+  // Ya sabemos cómo dividir el nodo raíz
+  const idA = 1, idB = 2;
+  nodos.push({ id: idA, valor: a, primo: esPrimo(a), dividido: false });
+  nodos.push({ id: idB, valor: b, primo: esPrimo(b), dividido: false });
+  aristas.push({ padre: 0, hijo: idA });
+  aristas.push({ padre: 0, hijo: idB });
+
   layoutYRenderizar();
 }
 
-// Layout: calcular posiciones x,y basadas en estructura del árbol
 function calcularLayout() {
-  // BFS para asignar niveles
   const levels = {};
-  const queue = [0];
+  const queue = [0]; levels[0] = 0;
   const visited = new Set();
-  levels[0] = 0;
   while (queue.length > 0) {
     const id = queue.shift();
     if (visited.has(id)) continue;
     visited.add(id);
-    const hijos = aristas.filter(a => a.padre === id).map(a => a.hijo);
-    hijos.forEach(h => {
-      levels[h] = levels[id] + 1;
-      queue.push(h);
+    aristas.filter(a => a.padre === id).forEach(a => {
+      levels[a.hijo] = levels[id] + 1;
+      queue.push(a.hijo);
     });
   }
 
-  const maxLevel = Math.max(...Object.values(levels), 0);
-  const levelHeight = 100;
-
-  // Asignar posiciones x usando DFS post-order
   function asignarX(id, xOffset) {
     const hijos = aristas.filter(a => a.padre === id).map(a => a.hijo);
     if (hijos.length === 0) {
       nodos.find(n => n.id === id).x = xOffset;
-      nodos.find(n => n.id === id).y = levels[id] * levelHeight + R + 10;
+      nodos.find(n => n.id === id).y = levels[id] * 100 + R + 10;
       return xOffset + R * 2.8;
     }
-    let start = xOffset;
-    let end = xOffset;
+    let start = xOffset, end = xOffset;
     hijos.forEach(h => { end = asignarX(h, end); });
-    const padre = nodos.find(n => n.id === id);
-    padre.x = (start + end) / 2;
-    padre.y = levels[id] * levelHeight + R + 10;
+    const p = nodos.find(n => n.id === id);
+    p.x = (start + end) / 2;
+    p.y = levels[id] * 100 + R + 10;
     return end;
   }
   asignarX(0, R + 10);
@@ -195,9 +350,8 @@ function layoutYRenderizar() {
 
   const maxX = Math.max(...nodos.map(n => n.x)) + R + 10;
   let maxY = Math.max(...nodos.map(n => n.y)) + R + 60;
-  // Si hay pendiente, agregar espacio extra para inputs + botón + error
-  if (pendiente) maxY = Math.max(...nodos.map(n => n.y)) + R + 220;
-  const svgW = Math.max(maxX, pendiente ? Math.max(...nodos.map(n=>n.x)) + 150 : 400);
+  if (pendiente) maxY += 200;
+  const svgW = Math.max(maxX, 400);
 
   svg.setAttribute('viewBox', `0 0 ${svgW} ${maxY}`);
   svg.setAttribute('width', svgW);
@@ -211,27 +365,24 @@ function layoutYRenderizar() {
     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
     line.setAttribute('x1', p.x); line.setAttribute('y1', p.y + R);
     line.setAttribute('x2', h.x); line.setAttribute('y2', h.y - R);
-    line.setAttribute('stroke', '#94a3b8');
-    line.setAttribute('stroke-width', '2');
+    line.setAttribute('stroke', '#94a3b8'); line.setAttribute('stroke-width', '2');
     svg.appendChild(line);
   });
 
   // Nodos
   nodos.forEach(nodo => {
     const tieneHijos = aristas.some(a => a.padre === nodo.id);
-    const esPendiente = pendiente && pendiente.id === nodo.id;
+    const esPend = pendiente && pendiente.id === nodo.id;
 
     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    g.setAttribute('class', 'nodo-group' + (!nodo.primo && !tieneHijos && !esPendiente ? ' clickeable' : ''));
+    g.setAttribute('class', 'nodo-group' + (!nodo.primo && !tieneHijos && !esPend ? ' clickeable' : ''));
 
     const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     circle.setAttribute('cx', nodo.x); circle.setAttribute('cy', nodo.y); circle.setAttribute('r', R);
-    circle.setAttribute('class', 'nodo-circle');
-
     let color = '#6d28d9';
     if (nodo.primo) color = '#059669';
     else if (tieneHijos) color = '#94a3b8';
-    else if (esPendiente) color = '#f59e0b';
+    else if (esPend) color = '#f59e0b';
     circle.setAttribute('fill', color);
 
     const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -240,108 +391,103 @@ function layoutYRenderizar() {
     text.setAttribute('font-size', nodo.valor > 99 ? '12' : '15');
     text.textContent = nodo.valor;
 
-    // Pulso para nodos clickeables
-    if (!nodo.primo && !tieneHijos && !esPendiente) {
+    if (!nodo.primo && !tieneHijos && !esPend) {
+      // Pulso
       const pulse = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       pulse.setAttribute('cx', nodo.x); pulse.setAttribute('cy', nodo.y);
-      pulse.setAttribute('r', R + 5);
-      pulse.setAttribute('fill', 'none');
-      pulse.setAttribute('stroke', '#a78bfa');
-      pulse.setAttribute('stroke-width', '2');
-      pulse.setAttribute('opacity', '0.5');
-
-      const anim = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
-      anim.setAttribute('attributeName', 'r');
-      anim.setAttribute('values', `${R+5};${R+12};${R+5}`);
-      anim.setAttribute('dur', '1.5s');
-      anim.setAttribute('repeatCount', 'indefinite');
-      pulse.appendChild(anim);
-
-      const anim2 = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
-      anim2.setAttribute('attributeName', 'opacity');
-      anim2.setAttribute('values', '0.5;0.1;0.5');
-      anim2.setAttribute('dur', '1.5s');
-      anim2.setAttribute('repeatCount', 'indefinite');
-      pulse.appendChild(anim2);
-
+      pulse.setAttribute('r', R + 5); pulse.setAttribute('fill', 'none');
+      pulse.setAttribute('stroke', '#a78bfa'); pulse.setAttribute('stroke-width', '2');
+      const a1 = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+      a1.setAttribute('attributeName', 'r'); a1.setAttribute('values', `${R+5};${R+12};${R+5}`);
+      a1.setAttribute('dur', '1.5s'); a1.setAttribute('repeatCount', 'indefinite');
+      const a2 = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+      a2.setAttribute('attributeName', 'opacity'); a2.setAttribute('values', '0.5;0.1;0.5');
+      a2.setAttribute('dur', '1.5s'); a2.setAttribute('repeatCount', 'indefinite');
+      pulse.appendChild(a1); pulse.appendChild(a2);
       g.appendChild(pulse);
       g.addEventListener('click', () => activarInput(nodo));
     }
 
-    g.appendChild(circle);
-    g.appendChild(text);
+    g.appendChild(circle); g.appendChild(text);
     svg.appendChild(g);
 
-    // Inputs para nodo pendiente
-    if (esPendiente) {
-      dibujarInputs(svg, nodo, svgW, maxY);
-    }
+    if (esPend) dibujarInputs(svg, nodo);
   });
 
   verificarCompleto();
 }
 
-function dibujarInputs(svg, nodo, svgW, maxY) {
-  const yHijo = nodo.y + 100;
-  const xA = nodo.x - 70;
-  const xB = nodo.x + 70;
+function dibujarInputs(svg, nodo) {
+  const yH = nodo.y + 100;
+  const xA = nodo.x - 75, xB = nodo.x + 75;
 
-  // Líneas punteadas hacia los inputs
-  [[xA, yHijo], [xB, yHijo]].forEach(([x, y]) => {
+  [[xA, yH], [xB, yH]].forEach(([x, y]) => {
     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
     line.setAttribute('x1', nodo.x); line.setAttribute('y1', nodo.y + R);
     line.setAttribute('x2', x); line.setAttribute('y2', y - R - 2);
-    line.setAttribute('stroke', '#a78bfa');
-    line.setAttribute('stroke-width', '2');
+    line.setAttribute('stroke', '#a78bfa'); line.setAttribute('stroke-width', '2');
     line.setAttribute('stroke-dasharray', '5 3');
     svg.appendChild(line);
   });
 
-  // ForeignObject izquierdo
-  const foA = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
-  foA.setAttribute('x', xA - R - 2); foA.setAttribute('y', yHijo - R - 2);
-  foA.setAttribute('width', (R+2)*2); foA.setAttribute('height', (R+2)*2);
-  const inputA = document.createElement('input');
-  inputA.type = 'number'; inputA.id = 'inp-a';
-  inputA.style.cssText = `width:${(R+2)*2}px;height:${(R+2)*2}px;border:2.5px solid #6d28d9;border-radius:50%;font-size:1.1rem;font-weight:800;text-align:center;color:#6d28d9;background:white;outline:none;padding:0;display:block;`;
-  inputA.placeholder = '?';
-  inputA.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('inp-b').focus(); });
-  foA.appendChild(inputA);
-  svg.appendChild(foA);
+  [['inp-a', xA], ['inp-b', xB]].forEach(([id, x]) => {
+    const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+    fo.setAttribute('x', x - R - 2); fo.setAttribute('y', yH - R - 2);
+    fo.setAttribute('width', (R+2)*2); fo.setAttribute('height', (R+2)*2);
+    const inp = document.createElement('input');
+    inp.type = 'number'; inp.id = id; inp.placeholder = '?';
+    inp.style.cssText = `width:${(R+2)*2}px;height:${(R+2)*2}px;border:2.5px solid #6d28d9;border-radius:50%;font-size:1.1rem;font-weight:800;text-align:center;color:#6d28d9;background:white;outline:none;padding:0;display:block;`;
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { if (id === 'inp-a') document.getElementById('inp-b').focus(); else confirmar(); }
+    });
+    fo.appendChild(inp);
+    svg.appendChild(fo);
+  });
 
-  // ForeignObject derecho
-  const foB = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
-  foB.setAttribute('x', xB - R - 2); foB.setAttribute('y', yHijo - R - 2);
-  foB.setAttribute('width', (R+2)*2); foB.setAttribute('height', (R+2)*2);
-  const inputB = document.createElement('input');
-  inputB.type = 'number'; inputB.id = 'inp-b';
-  inputB.style.cssText = inputA.style.cssText;
-  inputB.placeholder = '?';
-  inputB.addEventListener('keydown', e => { if (e.key === 'Enter') confirmar(); });
-  foB.appendChild(inputB);
-  svg.appendChild(foB);
+  // Multiplicación en tiempo real
+  const foMult = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+  foMult.setAttribute('x', nodo.x - 60); foMult.setAttribute('y', yH + R + 8);
+  foMult.setAttribute('width', '120'); foMult.setAttribute('height', '24');
+  foMult.id = 'fo-mult';
+  svg.appendChild(foMult);
 
-  // Botón confirmar
   const foBtn = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
-  const btnW = 110; const btnH = 36;
-  foBtn.setAttribute('x', nodo.x - btnW/2);
-  foBtn.setAttribute('y', yHijo + R + 8);
-  foBtn.setAttribute('width', btnW); foBtn.setAttribute('height', btnH);
+  foBtn.setAttribute('x', nodo.x - 55); foBtn.setAttribute('y', yH + R + 38);
+  foBtn.setAttribute('width', '110'); foBtn.setAttribute('height', '36');
   const btn = document.createElement('button');
   btn.textContent = '✓ Confirmar';
-  btn.style.cssText = `width:${btnW}px;height:${btnH}px;border-radius:10px;background:#6d28d9;color:white;border:none;font-size:0.85rem;font-weight:700;cursor:pointer;`;
+  btn.style.cssText = `width:110px;height:36px;border-radius:10px;background:#6d28d9;color:white;border:none;font-size:0.85rem;font-weight:700;cursor:pointer;`;
   btn.onclick = confirmar;
   foBtn.appendChild(btn);
   svg.appendChild(foBtn);
 
-  // Mensaje error
   const foErr = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
-  foErr.setAttribute('x', nodo.x - 120); foErr.setAttribute('y', yHijo + R + 52);
+  foErr.setAttribute('x', nodo.x - 120); foErr.setAttribute('y', yH + R + 82);
   foErr.setAttribute('width', '240'); foErr.setAttribute('height', '30');
   foErr.id = 'fo-error';
   svg.appendChild(foErr);
 
-  setTimeout(() => { inputA.focus(); }, 100);
+  setTimeout(() => {
+    const inpA = document.getElementById('inp-a');
+    const inpB = document.getElementById('inp-b');
+    if (inpA) {
+      inpA.focus();
+      const update = () => {
+        const a = parseInt(inpA.value), b = parseInt(inpB.value);
+        const fo = document.getElementById('fo-mult');
+        if (!fo) return;
+        fo.innerHTML = '';
+        if (a && b) {
+          const div = document.createElement('div');
+          div.style.cssText = `font-size:0.85rem;font-weight:700;text-align:center;color:${a*b===nodo.valor?'#166534':'#991b1b'};`;
+          div.textContent = a + ' × ' + b + ' = ' + (a*b);
+          fo.appendChild(div);
+        }
+      };
+      inpA.addEventListener('input', update);
+      inpB.addEventListener('input', update);
+    }
+  }, 100);
 }
 
 function activarInput(nodo) {
@@ -355,24 +501,21 @@ function confirmar() {
   const a = parseInt(document.getElementById('inp-a').value);
   const b = parseInt(document.getElementById('inp-b').value);
   const nodo = pendiente;
-
-  const foErr = document.getElementById('fo-error');
+  const fo = document.getElementById('fo-error');
 
   if (!a || !b || a < 2 || b < 2) {
-    mostrarError(foErr, 'Escribe dos números mayores que 1');
+    mostrarError(fo, 'Escribe dos números mayores que 1');
     return;
   }
   if (a * b !== nodo.valor) {
-    mostrarError(foErr, `${a} × ${b} = ${a*b}, no es ${nodo.valor}. Intenta de nuevo.`);
+    mostrarError(fo, `${a} × ${b} = ${a*b}, no es ${nodo.valor}`);
     return;
   }
 
-  // Correcto
   pendiente = null;
-  const idA = nodos.length;
-  const idB = nodos.length + 1;
-  nodos.push({ id: idA, valor: a, primo: esPrimo(a), dividido: false });
-  nodos.push({ id: idB, valor: b, primo: esPrimo(b), dividido: false });
+  const idA = nodos.length, idB = nodos.length + 1;
+  nodos.push({ id: idA, valor: a, primo: esPrimo(a) });
+  nodos.push({ id: idB, valor: b, primo: esPrimo(b) });
   aristas.push({ padre: nodo.id, hijo: idA });
   aristas.push({ padre: nodo.id, hijo: idB });
   layoutYRenderizar();
@@ -380,30 +523,25 @@ function confirmar() {
 
 function mostrarError(fo, msg) {
   if (!fo) return;
+  fo.innerHTML = '';
   const div = document.createElement('div');
   div.style.cssText = 'background:#fee2e2;color:#991b1b;border-radius:8px;padding:4px 10px;font-size:0.78rem;font-weight:700;text-align:center;width:240px;';
   div.textContent = msg;
-  fo.innerHTML = '';
   fo.appendChild(div);
 }
 
 function verificarCompleto() {
   const hojas = nodos.filter(n => !aristas.some(a => a.padre === n.id));
-  const todoPrimo = hojas.every(n => n.primo) && nodos.length > 1 && !pendiente;
-
-  const rf = document.getElementById('resultado-final');
-  if (todoPrimo) {
+  if (hojas.every(n => n.primo) && nodos.length > 1 && !pendiente) {
     const primos = hojas.map(n => n.valor).sort((a,b) => a-b);
     const conteo = {};
     primos.forEach(p => conteo[p] = (conteo[p]||0)+1);
     const formula = Object.entries(conteo)
       .map(([p,c]) => c > 1 ? p + (c===2?'²':c===3?'³':'^'+c) : p)
       .join(' × ');
+    const rf = document.getElementById('resultado-final');
     rf.className = 'resultado-final rf-verde visible';
-    rf.innerHTML = `<div class="rf-titulo">¡Listo! Los átomos primos del ${nodos[0].valor}:</div><div class="rf-formula">${nodos[0].valor} = ${primos.join(' × ')} = ${formula}</div>`;
-  } else {
-    rf.className = 'resultado-final';
-    rf.innerHTML = '';
+    rf.innerHTML = `<div class="rf-titulo">¡Listo! Los átomos primos del ${N}:</div><div class="rf-formula">${N} = ${primos.join(' × ')} = ${formula}</div>`;
   }
 }
 </script>
