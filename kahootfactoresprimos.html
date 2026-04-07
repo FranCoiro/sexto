@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kahoot — Descomposición en factores primos</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#2c0b6e;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:24px 16px;font-family:system-ui,sans-serif;}
+.k-wrap{max-width:680px;width:100%;}
+.k-header{background:#46178F;border-radius:16px 16px 0 0;padding:16px 24px;display:flex;justify-content:space-between;align-items:center;}
+.k-title{color:#fff;font-size:15px;font-weight:700;}
+.k-counter{background:rgba(255,255,255,0.2);color:#fff;font-size:13px;font-weight:600;padding:4px 14px;border-radius:20px;}
+.k-body{background:#1a1a2e;border-radius:0 0 16px 16px;padding:24px 20px 20px;}
+.k-pregunta{background:#fff;border-radius:12px;padding:22px 26px;margin-bottom:14px;text-align:center;min-height:100px;display:flex;flex-direction:column;justify-content:center;}
+.k-pregunta-num{font-size:11px;font-weight:700;color:#46178F;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;}
+.k-pregunta-texto{font-size:20px;font-weight:700;color:#1a1a2e;line-height:1.35;white-space:pre-line;}
+.k-pregunta-sub{font-size:13px;color:#666;margin-top:8px;}
+.hint{color:rgba(255,255,255,0.45);font-size:12px;text-align:center;margin-bottom:10px;}
+.k-opciones{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.k-op{border-radius:10px;padding:18px 14px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:transform .1s,opacity .2s,filter .2s;user-select:none;}
+.k-op:hover:not(.bloqueado){filter:brightness(1.12);}
+.k-op.seleccionado{outline:4px solid #fff;transform:scale(1.03);}
+.k-op.dim{opacity:.3;cursor:default;}
+.k-op.win{transform:scale(1.04);outline:4px solid #fff;cursor:default;}
+.k-op.bloqueado{cursor:default;}
+.k-op-icon{width:34px;height:34px;border-radius:7px;background:rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;color:#fff;}
+.k-op-texto{font-size:15px;font-weight:700;color:#fff;line-height:1.3;}
+.k-op-A{background:#E21B3C;}.k-op-A .k-op-icon::after{content:'▲';}
+.k-op-B{background:#1368CE;}.k-op-B .k-op-icon::after{content:'◆';}
+.k-op-C{background:#26890C;}.k-op-C .k-op-icon::after{content:'●';}
+.k-op-D{background:#FFA602;}.k-op-D .k-op-icon::after{content:'✕';}
+.k-op-D .k-op-texto{color:#1a1a2e;}
+.k-op-D .k-op-icon{color:#1a1a2e;}
+.k-feedback{background:#fff;border-radius:10px;padding:14px 18px;display:none;margin-bottom:14px;}
+.k-feedback.show{display:flex;gap:12px;align-items:flex-start;}
+.k-fb-icon{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;flex-shrink:0;margin-top:1px;}
+.fb-ok{background:#26890C;}
+.fb-mal{background:#E21B3C;}
+.k-fb-texto{font-size:13.5px;color:#1a1a2e;line-height:1.6;}
+.k-controles{display:flex;align-items:center;gap:10px;}
+.k-prog{display:flex;gap:7px;flex:1;align-items:center;}
+.k-dot{width:11px;height:11px;border-radius:50%;background:rgba(255,255,255,0.2);}
+.k-dot.hecha{background:#26890C;}
+.k-dot.actual{background:#fff;box-shadow:0 0 0 3px rgba(255,255,255,0.3);}
+.k-btn{padding:10px 20px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .15s;}
+.k-btn-sec{background:rgba(255,255,255,0.15);color:#fff;}
+.k-btn-sec:hover:not(:disabled){background:rgba(255,255,255,0.25);}
+.k-btn-sec:disabled{opacity:.35;cursor:not-allowed;}
+.k-btn-pri{background:#26890C;color:#fff;}
+.k-btn-pri:hover:not(:disabled){background:#1d6a09;}
+.k-btn-pri:disabled{opacity:.35;cursor:not-allowed;}
+.k-final{background:#1a1a2e;border-radius:0 0 16px 16px;padding:56px 24px;text-align:center;}
+.k-final-emoji{font-size:56px;margin-bottom:14px;}
+.k-final h2{color:#fff;font-size:24px;font-weight:700;margin-bottom:10px;}
+.k-final p{color:rgba(255,255,255,.6);font-size:14px;margin-bottom:32px;}
+.k-final-btn{background:#46178F;color:#fff;padding:14px 32px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;border:none;}
+.k-final-btn:hover{background:#5a1fb5;}
+</style>
+</head>
+<body>
+<div class="k-wrap">
+  <div id="panel-juego">
+    <div class="k-header">
+      <span class="k-title">Descomposición en factores primos</span>
+      <span class="k-counter" id="lbl-num">1 / 6</span>
+    </div>
+    <div class="k-body">
+      <div class="k-pregunta">
+        <div class="k-pregunta-num" id="p-num">Pregunta 1</div>
+        <div class="k-pregunta-texto" id="p-texto"></div>
+        <div class="k-pregunta-sub" id="p-sub"></div>
+      </div>
+      <div class="hint" id="hint">Selecciona una respuesta con tu pareja</div>
+      <div class="k-opciones" id="opciones"></div>
+      <div class="k-feedback" id="feedback">
+        <div class="k-fb-icon" id="fb-icon"></div>
+        <div class="k-fb-texto" id="fb-texto"></div>
+      </div>
+      <div class="k-controles">
+        <div class="k-prog" id="progreso"></div>
+        <button class="k-btn k-btn-sec" id="btn-reveal" onclick="revelar()" disabled>Verificar respuesta</button>
+        <button class="k-btn k-btn-pri" id="btn-sig" onclick="siguiente()" disabled>Siguiente →</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="panel-final" style="display:none;">
+    <div class="k-header">
+      <span class="k-title">Descomposición en factores primos</span>
+      <span class="k-counter">Final</span>
+    </div>
+    <div class="k-final">
+      <div class="k-final-emoji">🎉</div>
+      <h2>Kahoot terminado</h2>
+      <p>Bien trabajado. Revisen sus respuestas con la pareja.</p>
+      <button class="k-final-btn" onclick="reiniciar()">Jugar de nuevo</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const preguntas=[
+  {texto:"¿Cuál es la descomposición correcta del 12?",sub:"Elige la expresión que tiene solo factores primos",opciones:["2 × 6","2 × 2 × 3","3 × 4","2 × 2 × 2"],correcta:1,feedback:"12 = 2 × 2 × 3. El 6 y el 4 no son primos — son rectángulos que hay que seguir dividiendo."},
+  {texto:"¿Puede el 4 aparecer como factor en el árbol?",sub:"Recuerda: en el árbol solo aparecen círculos-perritos",opciones:["Sí, el 4 es par","No, el 4 no es primo","Sí, si el número es grande","Depende del número"],correcta:1,feedback:"El 4 no es primo (4 = 2 × 2). Si aparece en el árbol es un rectángulo disfrazado — hay que seguirlo dividiendo."},
+  {texto:"¿Cuál es la descomposición correcta del 18?",sub:"Cuidado con los factores que no son primos",opciones:["2 × 9","2 × 4 × 3","2 × 3 × 3","3 × 6"],correcta:2,feedback:"18 = 2 × 3 × 3. El 9 no es primo (9 = 3 × 3) y el 6 tampoco. Hay que llegar solo a perritos."},
+  {texto:"¿Esta descomposición es correcta?\n30 = 2 × 15",sub:"¿El árbol está completo? ¿Todos son primos?",opciones:["Sí, está bien","No, el 15 no es primo","Sí, 2 y 15 son primos","No, falta el 3"],correcta:1,feedback:"Falsa — el 15 no es primo (15 = 3 × 5). El árbol no terminó. Corrección: 30 = 2 × 3 × 5."},
+  {texto:"¿Cuántos factores primos tiene el 45?",sub:"Pista: el 45 no es par, no empieza por 2",opciones:["2 factores","3 factores","4 factores","1 factor"],correcta:1,feedback:"45 = 3 × 3 × 5. Tres perritos. El 45 no es par — hay que empezar dividiendo por 3."},
+  {texto:"¿Esta descomposición es correcta?\n28 = 4 × 7",sub:"Revisa si todos los factores son primos",opciones:["Sí, 4 y 7 son primos","No, el 4 no es primo","Sí, 4 × 7 = 28","No, falta dividir el 7"],correcta:1,feedback:"Falsa — el 4 no es primo. Corrección: 28 = 2 × 2 × 7. El 7 sí es primo, pero el 4 había que seguirlo dividiendo."}
+];
+
+let actual=0,revelado=false,seleccionado=null;
+
+function renderPregunta(){
+  const p=preguntas[actual];
+  document.getElementById('lbl-num').textContent=`${actual+1} / ${preguntas.length}`;
+  document.getElementById('p-num').textContent=`Pregunta ${actual+1}`;
+  document.getElementById('p-texto').textContent=p.texto;
+  document.getElementById('p-sub').textContent=p.sub;
+  document.getElementById('hint').textContent='Selecciona una respuesta con tu pareja';
+  const ops=document.getElementById('opciones');
+  ops.innerHTML='';
+  ['A','B','C','D'].forEach((l,i)=>{
+    const div=document.createElement('div');
+    div.className=`k-op k-op-${l}`;
+    div.innerHTML=`<div class="k-op-icon"></div><div class="k-op-texto">${p.opciones[i]}</div>`;
+    div.onclick=()=>seleccionar(div,i);
+    ops.appendChild(div);
+  });
+  document.getElementById('feedback').className='k-feedback';
+  document.getElementById('fb-texto').textContent='';
+  document.getElementById('btn-reveal').disabled=true;
+  document.getElementById('btn-sig').disabled=true;
+  document.getElementById('btn-sig').textContent=actual>=preguntas.length-1?'Ver resultados':'Siguiente →';
+  revelado=false;seleccionado=null;
+  renderProgreso();
+}
+
+function seleccionar(el,idx){
+  if(revelado)return;
+  seleccionado=idx;
+  document.querySelectorAll('.k-op').forEach(o=>o.classList.remove('seleccionado'));
+  el.classList.add('seleccionado');
+  document.getElementById('btn-reveal').disabled=false;
+  document.getElementById('hint').textContent='¿Seguros? Pulsa "Verificar respuesta"';
+}
+
+function revelar(){
+  if(revelado||seleccionado===null)return;
+  revelado=true;
+  const p=preguntas[actual];
+  const acerto=seleccionado===p.correcta;
+  document.querySelectorAll('.k-op').forEach((o,i)=>{
+    o.classList.add('bloqueado');
+    o.onclick=null;
+    if(i===p.correcta)o.classList.add('win');
+    else o.classList.add('dim');
+  });
+  const fb=document.getElementById('feedback');
+  fb.className='k-feedback show';
+  const icon=document.getElementById('fb-icon');
+  icon.className='k-fb-icon '+(acerto?'fb-ok':'fb-mal');
+  icon.textContent=acerto?'✓':'✗';
+  document.getElementById('fb-texto').textContent=(acerto?'¡Correcto! ':'Incorrecto — ')+p.feedback;
+  document.getElementById('hint').textContent=acerto?'Muy bien.':'La respuesta correcta está resaltada.';
+  document.getElementById('btn-reveal').disabled=true;
+  document.getElementById('btn-sig').disabled=false;
+}
+
+function siguiente(){
+  actual++;
+  if(actual>=preguntas.length){mostrarFinal();return;}
+  renderPregunta();
+}
+
+function renderProgreso(){
+  const cont=document.getElementById('progreso');
+  cont.innerHTML='';
+  preguntas.forEach((_,i)=>{
+    const d=document.createElement('div');
+    d.className='k-dot'+(i<actual?' hecha':i===actual?' actual':'');
+    cont.appendChild(d);
+  });
+}
+
+function mostrarFinal(){
+  document.getElementById('panel-juego').style.display='none';
+  document.getElementById('panel-final').style.display='block';
+}
+
+function reiniciar(){
+  actual=0;revelado=false;seleccionado=null;
+  document.getElementById('panel-final').style.display='none';
+  document.getElementById('panel-juego').style.display='block';
+  renderPregunta();
+}
+
+renderPregunta();
+</script>
+</body>
+</html>
