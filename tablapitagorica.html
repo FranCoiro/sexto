@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tablas de multiplicar</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 22px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 10px;
+    }
+    #infobar {
+      font-size: 18px;
+      font-weight: 500;
+      color: #555;
+      min-height: 30px;
+      margin-bottom: 12px;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    #infobar span {
+      font-size: 26px;
+      font-weight: 700;
+      color: #1a6e3c;
+    }
+    table {
+      border-collapse: collapse;
+      width: min(95vw, 700px);
+      table-layout: fixed;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    td {
+      text-align: center;
+      font-size: clamp(12px, 2.2vw, 18px);
+      font-weight: 400;
+      cursor: pointer;
+      border: 0.5px solid rgba(0,0,0,0.1);
+      aspect-ratio: 1;
+      transition: background 0.15s, opacity 0.15s, transform 0.1s;
+      color: #333;
+      background: #fff;
+      user-select: none;
+    }
+    td.header-row {
+      font-weight: 700;
+      color: white;
+      cursor: default;
+    }
+    td.dim { opacity: 0.15; }
+    td.lit-row { background: #B5D4F4 !important; color: #042C53 !important; }
+    td.lit-col { background: #C0DD97 !important; color: #173404 !important; }
+    td.selected-result {
+      background: #1D9E75 !important;
+      color: white !important;
+      font-weight: 700;
+      font-size: clamp(14px, 2.6vw, 20px) !important;
+      transform: scale(1.1);
+      z-index: 3;
+      position: relative;
+      box-shadow: inset 0 0 0 3px #0F6E56;
+      border-radius: 6px;
+    }
+    .hint {
+      font-size: 13px;
+      color: #999;
+      text-align: center;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Tablas de multiplicar</h1>
+  <div id="infobar">Haz clic en cualquier resultado</div>
+  <table id="tabla"></table>
+  <p class="hint">Clic en un resultado para iluminar sus factores &nbsp;·&nbsp; Clic de nuevo para deseleccionar</p>
+
+  <script>
+    const colores = [
+      '#E53935','#E67C00','#F9A825','#558B2F','#00897B',
+      '#1E88E5','#5E35B1','#D81B60','#6D4C41','#546E7A'
+    ];
+
+    const tabla = document.getElementById('tabla');
+    const infobar = document.getElementById('infobar');
+    let selected = null;
+
+    for (let r = 0; r <= 10; r++) {
+      const tr = document.createElement('tr');
+      for (let c = 0; c <= 10; c++) {
+        const td = document.createElement('td');
+        if (r === 0 && c === 0) {
+          td.textContent = '×';
+          td.className = 'header-row';
+          td.style.background = '#455A64';
+        } else if (r === 0) {
+          td.textContent = c;
+          td.className = 'header-row';
+          td.style.background = colores[c - 1];
+        } else if (c === 0) {
+          td.textContent = r;
+          td.className = 'header-row';
+          td.style.background = colores[r - 1];
+        } else {
+          td.textContent = r * c;
+          td.dataset.row = r;
+          td.dataset.col = c;
+          td.addEventListener('click', () => handleClick(r, c));
+        }
+        tr.appendChild(td);
+      }
+      tabla.appendChild(tr);
+    }
+
+    function handleClick(row, col) {
+      if (selected && selected.row === row && selected.col === col) {
+        clearHighlight();
+        selected = null;
+        infobar.innerHTML = 'Haz clic en cualquier resultado';
+        return;
+      }
+      selected = { row, col };
+      applyHighlight(row, col);
+      infobar.innerHTML = `<span>${row} × ${col} = ${row * col}</span>`;
+    }
+
+    function clearHighlight() {
+      const rows = tabla.rows;
+      for (let r = 0; r <= 10; r++) {
+        for (let c = 0; c <= 10; c++) {
+          const cell = rows[r].cells[c];
+          cell.classList.remove('dim','lit-row','lit-col','selected-result');
+          cell.style.opacity = '';
+        }
+      }
+    }
+
+    function applyHighlight(row, col) {
+      clearHighlight();
+      const rows = tabla.rows;
+      for (let r = 1; r <= 10; r++) {
+        for (let c = 1; c <= 10; c++) {
+          const cell = rows[r].cells[c];
+          if (r === row && c === col) {
+            cell.classList.add('selected-result');
+          } else if (r === row) {
+            cell.classList.add('lit-row');
+          } else if (c === col) {
+            cell.classList.add('lit-col');
+          } else {
+            cell.classList.add('dim');
+          }
+        }
+      }
+      for (let c = 1; c <= 10; c++) {
+        rows[0].cells[c].style.opacity = c === col ? '1' : '0.3';
+      }
+      for (let r = 1; r <= 10; r++) {
+        rows[r].cells[0].style.opacity = r === row ? '1' : '0.3';
+      }
+    }
+  </script>
+
+</body>
+</html>
