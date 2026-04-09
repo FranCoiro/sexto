@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MCM — Problemas</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;900&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #1a1a2e;
+    --surface: #16213e;
+    --card: #0f3460;
+    --accent: #e94560;
+    --text: #eaeaea;
+    --muted: #8888aa;
+    --A: #e94560;
+    --B: #0f9b58;
+    --C: #f5a623;
+    --correct: #00e676;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* TOP NAV */
+  .topnav {
+    background: var(--surface);
+    border-bottom: 2px solid #ffffff11;
+    padding: 0.6rem 1rem;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .nav-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    padding: 8px 12px;
+    border: 2px solid #ffffff22;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    line-height: 1.6;
+  }
+
+  .nav-btn:hover { border-color: #ffffff55; color: var(--text); }
+  .nav-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* MAIN */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 2rem 1rem;
+    gap: 1.5rem;
+  }
+
+  /* PROBLEM CARD */
+  .problem-card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 1.5rem 2rem;
+    max-width: 720px;
+    width: 100%;
+    border: 1px solid #ffffff11;
+  }
+
+  .problem-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    margin-bottom: 0.8rem;
+  }
+
+  .problem-text {
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.6;
+    color: var(--text);
+  }
+
+  /* STEP */
+  .step-area {
+    max-width: 720px;
+    width: 100%;
+  }
+
+  .step-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .step-num {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    background: var(--accent);
+    color: #fff;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .step-question {
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--text);
+  }
+
+  /* OPTIONS */
+  .options {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .opt-btn {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.2rem;
+    border-radius: 12px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+    font-family: 'Nunito', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    text-align: left;
+    width: 100%;
+  }
+
+  .opt-btn:active { transform: scale(0.98); }
+
+  .opt-btn.A { background: var(--A); color: #fff; }
+  .opt-btn.B { background: var(--B); color: #fff; }
+  .opt-btn.C { background: var(--C); color: #1a1a2e; }
+
+  .opt-btn.correct { outline: 4px solid var(--correct); box-shadow: 0 0 20px var(--correct); }
+  .opt-btn.wrong { opacity: 0.35; }
+
+  .opt-icon {
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  .opt-letter {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    opacity: 0.8;
+    flex-shrink: 0;
+  }
+
+  .opt-text { flex: 1; }
+
+  /* NAV STEPS */
+  .step-nav {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .step-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #ffffff22;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .step-dot.done { background: var(--correct); }
+  .step-dot.current { background: var(--accent); transform: scale(1.3); }
+
+  .arrow-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    padding: 10px 18px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+
+  .arrow-btn:active { transform: scale(0.97); }
+  .arrow-btn:disabled { opacity: 0.3; cursor: default; }
+
+  .reset-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    padding: 8px 14px;
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid #ffffff22;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .finished {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px;
+    color: var(--correct);
+    text-align: center;
+    padding: 2rem;
+    animation: pulse 1s ease-in-out infinite;
+  }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+</style>
+</head>
+<body>
+
+<nav class="topnav" id="topnav"></nav>
+
+<main class="main">
+  <div class="problem-card" id="problemCard">
+    <div class="problem-label" id="problemLabel"></div>
+    <div class="problem-text" id="problemText"></div>
+  </div>
+
+  <div class="step-area" id="stepArea">
+    <div class="step-header">
+      <div class="step-num" id="stepNum">1</div>
+      <div class="step-question" id="stepQuestion"></div>
+    </div>
+    <div class="options" id="optionsContainer"></div>
+  </div>
+
+  <div class="step-nav">
+    <button class="arrow-btn" id="btnPrev" onclick="prevStep()">◀ anterior</button>
+    <div id="stepDots"></div>
+    <button class="arrow-btn" id="btnNext" onclick="nextStep()">siguiente ▶</button>
+  </div>
+
+  <button class="reset-btn" onclick="resetStep()">reiniciar paso</button>
+</main>
+
+<script>
+const PROBLEMS = [
+  {
+    id: "youtubers",
+    label: "Youtubers",
+    text: "Dos youtubers suben videos. Uno sube cada 4 días y el otro cada 6 días. Hoy subieron los dos. ¿Cuántos días después volverán a subir el mismo día?",
+    steps: [
+      {
+        q: "¿Qué me preguntan?",
+        opts: ["Cuántos videos suben en total", "Cuántos días pasan hasta que coinciden", "Cuál youtuber sube más seguido"],
+        correct: 1
+      },
+      {
+        q: "¿Qué números hay?",
+        opts: ["4 y 6", "4 y 10", "6 y 12"],
+        correct: 0
+      },
+      {
+        q: "¿Cuál es el primer múltiplo en común?",
+        opts: ["12", "24", "10"],
+        correct: 0
+      },
+      {
+        q: "Respuesta completa",
+        opts: ["12 días", "24 días", "10 días"],
+        correct: 0
+      }
+    ]
+  },
+  {
+    id: "panaderia",
+    label: "Panadería",
+    text: "Una panadería saca pan del horno cada 6 minutos y medialunas cada 9 minutos. Al inicio del turno salen los dos al mismo tiempo. ¿Cuántos minutos después volverán a salir juntos?",
+    steps: [
+      {
+        q: "¿Qué me preguntan?",
+        opts: ["Cuánto pan se produce en total", "Cuántos minutos hasta que coinciden", "Qué sale primero del horno"],
+        correct: 1
+      },
+      {
+        q: "¿Qué números hay?",
+        opts: ["6 y 9", "6 y 12", "9 y 18"],
+        correct: 0
+      },
+      {
+        q: "¿Cuál es el primer múltiplo en común?",
+        opts: ["18", "36", "15"],
+        correct: 0
+      },
+      {
+        q: "Respuesta completa",
+        opts: ["18 minutos", "36 minutos", "15 minutos"],
+        correct: 0
+      }
+    ]
+  },
+  {
+    id: "fuentes",
+    label: "Fuentes",
+    text: "En un parque hay dos fuentes que lanzan agua al mismo tiempo. Una lanza cada 8 minutos y la otra cada 10 minutos. ¿Cuántos minutos después volverán a lanzar juntas?",
+    steps: [
+      {
+        q: "¿Qué me preguntan?",
+        opts: ["Cuánta agua lanzan en total", "Cuántos minutos hasta que coinciden", "Cuál fuente lanza más lejos"],
+        correct: 1
+      },
+      {
+        q: "¿Qué números hay?",
+        opts: ["8 y 10", "8 y 12", "10 y 20"],
+        correct: 0
+      },
+      {
+        q: "¿Cuál es el primer múltiplo en común?",
+        opts: ["40", "80", "18"],
+        correct: 0
+      },
+      {
+        q: "Respuesta completa",
+        opts: ["40 minutos", "80 minutos", "18 minutos"],
+        correct: 0
+      }
+    ]
+  },
+  {
+    id: "franco",
+    label: "Franco vs Alejandra",
+    text: "Problema: Fuentes del parque (8 y 10 min). Franco dice: multipliqué 8 × 10 = 80, la respuesta es 80 minutos. Alejandra dice: busqué el primer múltiplo común con listas y encontré 40 minutos.",
+    steps: [
+      {
+        q: "¿Qué hizo Franco?",
+        opts: ["Multiplicó 8 × 10", "Sumó 8 + 10", "Hizo lista de múltiplos"],
+        correct: 0
+      },
+      {
+        q: "¿El resultado de Franco es un múltiplo común?",
+        opts: ["Sí, pero no es el mínimo", "No, está mal del todo", "Sí, y es correcto"],
+        correct: 0
+      },
+      {
+        q: "¿Quién tiene razón?",
+        opts: ["Alejandra", "Franco", "Los dos"],
+        correct: 0
+      }
+    ]
+  },
+  {
+    id: "maquina",
+    label: "Máquina",
+    text: "En una ferretería, una máquina atornilla cada 6 segundos y otra pega cada 9 segundos. Ambas arrancan al mismo tiempo. ¿Cuántos segundos después trabajarán juntas?",
+    steps: [
+      {
+        q: "¿Qué me preguntan?",
+        opts: ["Cuánto producen en total", "Cuántos segundos hasta que coinciden", "Cuál máquina es más rápida"],
+        correct: 1
+      },
+      {
+        q: "¿Qué números hay?",
+        opts: ["6 y 9", "6 y 12", "9 y 18"],
+        correct: 0
+      },
+      {
+        q: "¿Cuál es el primer múltiplo en común?",
+        opts: ["18", "36", "54"],
+        correct: 0
+      },
+      {
+        q: "Respuesta completa",
+        opts: ["18 segundos", "36 segundos", "54 segundos"],
+        correct: 0
+      }
+    ]
+  },
+  {
+    id: "buses",
+    label: "Buses",
+    text: "Dos buses salen de la misma terminal al mismo tiempo. El bus A sale cada 8 minutos y el bus B cada 12 minutos. ¿Cuántos minutos después volverán a salir juntos?",
+    steps: [
+      {
+        q: "¿Qué me preguntan?",
+        opts: ["Cuántos buses salen en total", "Cuántos minutos hasta que coinciden", "Cuál bus es más puntual"],
+        correct: 1
+      },
+      {
+        q: "¿Qué números hay?",
+        opts: ["8 y 12", "8 y 10", "12 y 16"],
+        correct: 0
+      },
+      {
+        q: "¿Cuál es el primer múltiplo en común?",
+        opts: ["24", "48", "20"],
+        correct: 0
+      },
+      {
+        q: "Respuesta completa",
+        opts: ["24 minutos", "48 minutos", "20 minutos"],
+        correct: 0
+      }
+    ]
+  }
+];
+
+const ICONS = ["📓", "🤚", "✋"];
+const LETTERS = ["A", "B", "C"];
+const COLORS = ["A", "B", "C"];
+
+let currentProblem = 0;
+let currentStep = 0;
+let revealed = false;
+
+function buildNav() {
+  const nav = document.getElementById('topnav');
+  nav.innerHTML = '';
+  PROBLEMS.forEach((p, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'nav-btn' + (i === currentProblem ? ' active' : '');
+    btn.textContent = p.label;
+    btn.onclick = () => selectProblem(i);
+    nav.appendChild(btn);
+  });
+}
+
+function selectProblem(i) {
+  currentProblem = i;
+  currentStep = 0;
+  revealed = false;
+  buildNav();
+  render();
+}
+
+function render() {
+  const p = PROBLEMS[currentProblem];
+  const s = p.steps[currentStep];
+
+  document.getElementById('problemLabel').textContent = 'Problema';
+  document.getElementById('problemText').textContent = p.text;
+  document.getElementById('stepNum').textContent = currentStep + 1;
+  document.getElementById('stepQuestion').textContent = s.q;
+
+  const container = document.getElementById('optionsContainer');
+  container.innerHTML = '';
+
+  s.opts.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn ' + COLORS[i];
+    if (revealed) {
+      btn.className += i === s.correct ? ' correct' : ' wrong';
+    }
+    btn.innerHTML = `<span class="opt-icon">${ICONS[i]}</span><span class="opt-letter">${LETTERS[i]}</span><span class="opt-text">${opt}</span>`;
+    if (!revealed) btn.onclick = () => revealAnswer();
+    container.appendChild(btn);
+  });
+
+  // dots
+  const dots = document.getElementById('stepDots');
+  dots.innerHTML = '';
+  p.steps.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'step-dot' + (i === currentStep ? ' current' : i < currentStep ? ' done' : '');
+    d.onclick = () => goToStep(i);
+    dots.appendChild(d);
+  });
+
+  document.getElementById('btnPrev').disabled = currentStep === 0;
+  document.getElementById('btnNext').disabled = currentStep === p.steps.length - 1;
+}
+
+function revealAnswer() {
+  revealed = true;
+  render();
+}
+
+function resetStep() {
+  revealed = false;
+  render();
+}
+
+function nextStep() {
+  if (currentStep < PROBLEMS[currentProblem].steps.length - 1) {
+    currentStep++;
+    revealed = false;
+    render();
+  }
+}
+
+function prevStep() {
+  if (currentStep > 0) {
+    currentStep--;
+    revealed = false;
+    render();
+  }
+}
+
+function goToStep(i) {
+  currentStep = i;
+  revealed = false;
+  render();
+}
+
+buildNav();
+render();
+</script>
+</body>
+</html>
