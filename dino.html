@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dino Jump</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #f7f7f0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+
+  .dino-app {
+    background: #f7f7f0;
+    border-radius: 12px;
+    padding: 1.5rem 1rem 2rem;
+    text-align: center;
+    font-family: 'Press Start 2P', monospace;
+    width: 100%;
+    max-width: 500px;
+  }
+
+  .question { font-size: 10px; color: #222; margin-bottom: 1.2rem; line-height: 1.8; }
+
+  .scene {
+    position: relative;
+    height: 150px;
+    border-bottom: 3px solid #222;
+    margin: 0 1rem 1rem;
+    overflow: hidden;
+  }
+
+  .cloud { position: absolute; font-size: 18px; opacity: 0.3; top: 10px; }
+
+  .dino-wrap {
+    position: absolute;
+    bottom: 3px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #dinoA { left: 18%; }
+  #dinoB { left: 58%; }
+
+  .freq-tag { font-size: 7px; margin-top: 4px; padding: 3px 6px; border-radius: 4px; }
+  .tag-a { background: #222; color: #f7f7f0; }
+  .tag-b { background: #555; color: #f7f7f0; }
+
+  .hud {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .timer-num { font-size: 30px; color: #222; line-height: 1; }
+  .timer-unit { font-size: 7px; color: #888; margin-top: 3px; }
+  .cnt-block { text-align: center; }
+  .cnt-n { font-size: 18px; }
+  .cnt-a { color: #222; }
+  .cnt-b { color: #555; }
+  .cnt-lbl { font-size: 6px; color: #888; margin-top: 3px; }
+
+  .btn-row { display: flex; justify-content: center; gap: 8px; margin-bottom: 0.8rem; flex-wrap: wrap; }
+
+  .btn-go {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    padding: 10px 18px;
+    background: #222;
+    color: #f7f7f0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .btn-pause {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    padding: 10px 18px;
+    background: #888;
+    color: #f7f7f0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: none;
+  }
+
+  .btn-rst {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    padding: 8px 12px;
+    background: transparent;
+    color: #888;
+    border: 2px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    display: none;
+  }
+
+  .paused-tag { display: none; font-size: 7px; color: #888; margin-top: 4px; }
+
+  .dots-section { margin-top: 1rem; padding: 0 0.5rem; }
+
+  .dots-header {
+    display: flex;
+    justify-content: center;
+    gap: 3rem;
+    margin-bottom: 6px;
+  }
+
+  .dots-lbl { font-size: 7px; color: #888; }
+
+  .dots-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    max-width: 360px;
+    margin: 0 auto;
+  }
+
+  .dots-col-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 6px 10px;
+    justify-content: flex-start;
+    border-right: 1px dashed #ccc;
+  }
+
+  .dots-col-grid:last-child { border-right: none; }
+
+  .dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #e0e0d8;
+    border: 2px solid #ccc;
+  }
+
+  .dot.a { background: #222; border-color: #222; }
+  .dot.b { background: #555; border-color: #555; }
+  .dot.ab { background: #222; border: 3px solid #e8b000; box-shadow: 0 0 0 2px #e8b000; }
+  .dot.empty { background: #e0e0d8; border-color: #ddd; }
+
+  .match-box {
+    display: none;
+    margin: 0.8rem auto 0;
+    max-width: 300px;
+    border: 3px solid #222;
+    border-radius: 6px;
+    padding: 10px 16px;
+    font-size: 8px;
+    color: #222;
+    line-height: 1.8;
+  }
+
+  .reveal-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    padding: 8px 14px;
+    background: #e8b000;
+    color: #222;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 8px;
+    display: none;
+  }
+</style>
+</head>
+<body>
+<div class="dino-app">
+  <div class="question">¿En qué segundo saltan<br>los dos al mismo tiempo?</div>
+
+  <div class="scene">
+    <div class="cloud" style="left:8%">&#9729;</div>
+    <div class="cloud" style="left:52%">&#9729;</div>
+    <div class="cloud" style="left:78%">&#9729;</div>
+
+    <div class="dino-wrap" id="dinoA">
+      <svg width="40" height="50" viewBox="0 0 40 50">
+        <rect x="18" y="2" width="14" height="10" rx="2" fill="#222"/>
+        <rect x="26" y="6" width="4" height="2" fill="#f7f7f0"/>
+        <rect x="10" y="10" width="22" height="18" rx="2" fill="#222"/>
+        <rect x="10" y="28" width="14" height="8" rx="1" fill="#222"/>
+        <rect x="8" y="24" width="8" height="4" rx="1" fill="#222"/>
+        <rect x="14" y="36" width="6" height="8" rx="1" fill="#222"/>
+        <rect x="22" y="36" width="6" height="6" rx="1" fill="#222"/>
+      </svg>
+    </div>
+
+    <div class="dino-wrap" id="dinoB">
+      <svg width="40" height="50" viewBox="0 0 40 50">
+        <rect x="18" y="2" width="14" height="10" rx="2" fill="#555"/>
+        <rect x="26" y="6" width="4" height="2" fill="#f7f7f0"/>
+        <rect x="10" y="10" width="22" height="18" rx="2" fill="#555"/>
+        <rect x="10" y="28" width="14" height="8" rx="1" fill="#555"/>
+        <rect x="8" y="24" width="8" height="4" rx="1" fill="#555"/>
+        <rect x="14" y="36" width="6" height="8" rx="1" fill="#555"/>
+        <rect x="22" y="36" width="6" height="6" rx="1" fill="#555"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="hud">
+    <div class="cnt-block">
+      <div class="cnt-n cnt-a" id="cntA">0</div>
+      <div class="cnt-lbl">saltos dino 1</div>
+    </div>
+    <div>
+      <div class="timer-num" id="timerNum">0</div>
+      <div class="timer-unit">segundos</div>
+    </div>
+    <div class="cnt-block">
+      <div class="cnt-n cnt-b" id="cntB">0</div>
+      <div class="cnt-lbl">saltos dino 2</div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn-go" id="btnGo" onclick="startSim()">► SALTAR</button>
+    <button class="btn-pause" id="btnPause" onclick="togglePause()">⏸ PAUSA</button>
+    <button class="btn-rst" id="btnRst" onclick="resetSim()">reiniciar</button>
+  </div>
+  <div class="paused-tag" id="pausedTag">— pausado —</div>
+
+  <div class="dots-section">
+    <div class="dots-header">
+      <span class="dots-lbl">dino 1</span>
+      <span class="dots-lbl">dino 2</span>
+    </div>
+    <div class="dots-grid">
+      <div class="dots-col-grid" id="dotsA"></div>
+      <div class="dots-col-grid" id="dotsB"></div>
+    </div>
+  </div>
+
+  <div class="match-box" id="matchBox">
+    <div id="matchMsg"></div>
+  </div>
+</div>
+
+<script>
+  const IA = 4, IB = 6, MAX = 24;
+  let tmr = null, elapsed = 0, cA = 0, cB = 0, paused = false, running = false;
+  let matches = [];
+
+  function jumpDino(id, duration) {
+    const el = document.getElementById(id);
+    let start = null;
+    const h = 50;
+    function frame(ts) {
+      if (!start) start = ts;
+      const p = Math.min((ts - start) / duration, 1);
+      const y = -Math.sin(p * Math.PI) * h;
+      el.style.transform = 'translateY(' + y + 'px)';
+      if (p < 1) requestAnimationFrame(frame);
+      else el.style.transform = 'translateY(0)';
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function addDot(containerId, cls, sec) {
+    const d = document.createElement('div');
+    d.className = 'dot ' + cls;
+    d.title = 's' + sec;
+    document.getElementById(containerId).appendChild(d);
+  }
+
+  function startSim() {
+    document.getElementById('btnGo').style.display = 'none';
+    document.getElementById('btnPause').style.display = 'inline-block';
+    document.getElementById('btnRst').style.display = 'inline-block';
+    running = true;
+    tmr = setInterval(tick, 1000);
+  }
+
+  function togglePause() {
+    if (!paused) {
+      clearInterval(tmr);
+      paused = true;
+      document.getElementById('btnPause').textContent = '► CONTINUAR';
+      document.getElementById('pausedTag').style.display = 'block';
+    } else {
+      tmr = setInterval(tick, 1000);
+      paused = false;
+      document.getElementById('btnPause').textContent = '⏸ PAUSA';
+      document.getElementById('pausedTag').style.display = 'none';
+    }
+  }
+
+  function resetSim() {
+    clearInterval(tmr);
+    elapsed=0; cA=0; cB=0; paused=false; running=false; matches=[];
+    document.getElementById('timerNum').textContent='0';
+    document.getElementById('cntA').textContent='0';
+    document.getElementById('cntB').textContent='0';
+    document.getElementById('matchBox').style.display='none';
+    document.getElementById('dotsA').innerHTML='';
+    document.getElementById('dotsB').innerHTML='';
+    document.getElementById('dinoA').style.transform='';
+    document.getElementById('dinoB').style.transform='';
+    document.getElementById('btnGo').style.display='inline-block';
+    document.getElementById('btnPause').style.display='none';
+    document.getElementById('btnPause').textContent='⏸ PAUSA';
+    document.getElementById('pausedTag').style.display='none';
+  }
+
+  function tick() {
+    elapsed++;
+    document.getElementById('timerNum').textContent = elapsed;
+    const fA = elapsed % IA === 0;
+    const fB = elapsed % IB === 0;
+    const both = fA && fB;
+
+    if (fA) { cA++; document.getElementById('cntA').textContent = cA; jumpDino('dinoA', 700); }
+    if (fB) { cB++; document.getElementById('cntB').textContent = cB; jumpDino('dinoB', 700); }
+
+    addDot('dotsA', fA ? (both ? 'ab' : 'a') : 'empty', elapsed);
+    addDot('dotsB', fB ? (both ? 'ab' : 'b') : 'empty', elapsed);
+
+    if (both) {
+      matches.push(elapsed);
+    }
+
+    if (elapsed >= MAX) {
+      clearInterval(tmr);
+      document.getElementById('btnPause').style.display = 'none';
+    }
+  }
+</script>
+</body>
+</html>
