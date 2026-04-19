@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carrera de Factores y Múltiplos · CicloMate</title>
+<style>
+  :root {
+    --red: #C0392B;
+    --red-dark: #922B21;
+    --green: #1E8449;
+    --green-light: #D4EFDF;
+    --yellow: #F1C40F;
+    --yellow-light: #FCF3CF;
+    --blue: #2874A6;
+    --purple: #884EA0;
+    --orange: #CA6F1E;
+    --ink: #1a1a1a;
+    --ink-soft: #444;
+    --muted: #888;
+    --line: #d8d8d8;
+    --bg: #fafafa;
+    --card: #ffffff;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.10);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 12px;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* -------------------- SETUP SCREEN -------------------- */
+  .setup {
+    max-width: 800px;
+    margin: 30px auto;
+    background: white;
+    border-radius: 14px;
+    box-shadow: var(--shadow-md);
+    padding: 30px;
+  }
+  .setup h1 {
+    color: var(--red);
+    font-size: 28px;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+  .setup .sub {
+    text-align: center;
+    color: var(--muted);
+    margin-bottom: 30px;
+    font-size: 13px;
+  }
+  .setup-section { margin-bottom: 28px; }
+  .setup-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    background: #f0f0f0;
+    padding: 5px;
+    border-radius: 10px;
+  }
+  .tab {
+    padding: 14px;
+    background: transparent;
+    border: none;
+    border-radius: 7px;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .tab.active {
+    background: white;
+    color: var(--red);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .multi-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+  }
+  .multi-btn {
+    aspect-ratio: 1;
+    background: white;
+    border: 2px solid var(--line);
+    border-radius: 10px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ink);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .multi-btn:hover { border-color: var(--red); transform: translateY(-2px); }
+  .multi-btn.selected {
+    background: var(--red);
+    color: white;
+    border-color: var(--red);
+  }
+
+  .factor-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .factor-input {
+    flex: 1;
+    padding: 14px 16px;
+    font-size: 22px;
+    font-weight: 700;
+    border: 2px solid var(--line);
+    border-radius: 10px;
+    text-align: center;
+  }
+  .factor-input:focus { outline: none; border-color: var(--red); }
+  .factor-hint {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  .modo-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .modo-card {
+    padding: 18px;
+    background: white;
+    border: 2px solid var(--line);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .modo-card:hover { border-color: var(--red); }
+  .modo-card.selected {
+    border-color: var(--red);
+    background: #FDF2F0;
+  }
+  .modo-card .icon { font-size: 28px; margin-bottom: 8px; }
+  .modo-card .title { font-weight: 700; color: var(--ink); margin-bottom: 4px; font-size: 15px; }
+  .modo-card .desc { font-size: 11.5px; color: var(--muted); line-height: 1.4; }
+
+  .equipos-config {
+    display: none;
+    margin-top: 14px;
+    padding: 14px;
+    background: #fafafa;
+    border-radius: 10px;
+  }
+  .equipos-config.show { display: block; }
+  .num-equipos {
+    display: flex;
+    gap: 8px;
+  }
+  .num-eq-btn {
+    flex: 1;
+    padding: 10px;
+    background: white;
+    border: 2px solid var(--line);
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .num-eq-btn.selected { background: var(--red); color: white; border-color: var(--red); }
+
+  .azar-config {
+    display: none;
+    margin-top: 14px;
+    padding: 14px;
+    background: #fafafa;
+    border-radius: 10px;
+  }
+  .azar-config.show { display: block; }
+  .azar-opciones {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .azar-opcion {
+    padding: 10px 14px;
+    background: white;
+    border: 2px solid var(--line);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 13px;
+  }
+  .azar-opcion.selected { background: var(--red); color: white; border-color: var(--red); }
+
+  .btn-iniciar {
+    width: 100%;
+    padding: 16px;
+    background: var(--red);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 10px;
+  }
+  .btn-iniciar:hover { background: var(--red-dark); transform: translateY(-2px); }
+
+  /* -------------------- GAME SCREEN -------------------- */
+  .game { display: none; }
+  .game.active { display: block; }
+
+  .header {
+    max-width: 1500px;
+    margin: 0 auto 12px;
+    background: var(--red);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    box-shadow: var(--shadow-md);
+  }
+  .header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .header .sub { font-size: 12px; opacity: 0.92; }
+  .btn-volver {
+    padding: 8px 14px;
+    background: rgba(255,255,255,0.15);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .btn-volver:hover { background: rgba(255,255,255,0.25); }
+
+  .main {
+    max-width: 1500px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 14px;
+  }
+  @media (max-width: 1100px) {
+    .main { grid-template-columns: 1fr; }
+  }
+
+  .tablero-container {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 14px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--line);
+    min-height: 500px;
+  }
+
+  .tablero-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding: 0 4px;
+  }
+  .tablero-titulo {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ink-soft);
+  }
+  .tablero-titulo strong { color: var(--red); }
+
+  .tablero {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: repeat(6, 1fr);
+    gap: 7px;
+    min-height: 440px;
+  }
+
+  .casilla {
+    background: white;
+    border: 2px solid var(--ink);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--ink);
+    position: relative;
+    transition: all 0.15s;
+    min-height: 70px;
+    cursor: pointer;
+  }
+  .casilla:hover:not(.start):not(.finish):not(.instructions-card) {
+    background: #FEF9E7;
+    transform: scale(1.05);
+  }
+
+  .casilla.start, .casilla.finish {
+    background: var(--purple);
+    color: white;
+    font-size: 17px;
+    border-color: var(--purple);
+    cursor: default;
+  }
+  .casilla.finish { background: var(--red); border-color: var(--red); }
+
+  .casilla.actual {
+    background: var(--yellow-light);
+    border-color: var(--yellow);
+    box-shadow: 0 0 0 3px var(--yellow);
+  }
+  .casilla.correcta {
+    background: var(--green-light);
+    border-color: var(--green);
+    color: var(--green);
+    animation: pulseOk 0.4s;
+  }
+  .casilla.incorrecta {
+    background: #FADBD8;
+    border-color: var(--red);
+    color: var(--red);
+    animation: shake 0.4s;
+  }
+  @keyframes pulseOk { 0% { transform: scale(1); } 50% { transform: scale(1.12); } 100% { transform: scale(1); } }
+  @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+
+  .peones {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    display: flex;
+    gap: 2px;
+  }
+  .peon {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+
+  .instructions-card {
+    background: white !important;
+    border: 2px dashed var(--muted) !important;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    display: flex !important;
+    flex-direction: column;
+    justify-content: center;
+    cursor: default !important;
+  }
+  .instructions-card:hover { transform: none !important; background: white !important; }
+  .instructions-card h3 {
+    color: var(--red);
+    font-size: 14px;
+    margin-bottom: 6px;
+    text-align: center;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+  }
+  .instructions-card ol {
+    padding-left: 18px;
+    line-height: 1.35;
+  }
+  .instructions-card li { margin-bottom: 2px; font-size: 11px; }
+
+  .panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .card {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--line);
+  }
+  .card h3 {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+
+  .dado-section { text-align: center; }
+  .dado {
+    width: 85px;
+    height: 85px;
+    margin: 0 auto 10px;
+    background: white;
+    border: 3px solid var(--ink);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 44px;
+    font-weight: 900;
+    color: var(--red);
+    box-shadow: var(--shadow-md);
+  }
+  .dado.rolling { animation: rollDice 0.6s; }
+  @keyframes rollDice {
+    0%,100% { transform: rotate(0); }
+    25% { transform: rotate(-15deg) scale(1.1); }
+    50% { transform: rotate(15deg) scale(1.1); }
+    75% { transform: rotate(-10deg); }
+  }
+  .btn-dado {
+    width: 100%;
+    padding: 11px;
+    background: var(--red);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-dado:hover { background: var(--red-dark); }
+  .btn-dado:disabled { background: #ccc; cursor: not-allowed; }
+
+  .equipos {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .equipo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    transition: all 0.15s;
+  }
+  .equipo.turno {
+    background: var(--yellow-light);
+    border-color: var(--yellow);
+  }
+  .equipo-color {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .equipo-info { flex: 1; font-size: 13px; }
+  .equipo-nombre { font-weight: 700; color: var(--ink); }
+  .equipo-pos { font-size: 11px; color: var(--muted); }
+
+  .azar-panel {
+    text-align: center;
+    padding: 12px 16px;
+  }
+  .azar-turno {
+    font-size: 36px;
+    font-weight: 900;
+    color: var(--red);
+    margin: 8px 0 2px;
+  }
+  .azar-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+
+  .decision {
+    background: var(--yellow-light);
+    border: 2px solid var(--yellow);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+    display: none;
+  }
+  .decision.active { display: block; }
+  .decision-q {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--ink);
+  }
+  .decision-num {
+    font-size: 42px;
+    font-weight: 900;
+    color: var(--red);
+    margin: 6px 0;
+  }
+  .decision-btns {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .btn-si, .btn-no {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: white;
+  }
+  .btn-si { background: var(--green); }
+  .btn-si:hover { background: #145A32; }
+  .btn-no { background: var(--red); }
+  .btn-no:hover { background: var(--red-dark); }
+
+  .feedback {
+    margin-top: 10px;
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    display: none;
+  }
+  .feedback.ok { display: block; background: var(--green-light); color: var(--green); }
+  .feedback.err { display: block; background: #FADBD8; color: var(--red); }
+
+  .modal-bg {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  .modal-bg.active { display: flex; }
+  .modal {
+    background: white;
+    padding: 30px;
+    border-radius: 16px;
+    max-width: 500px;
+    text-align: center;
+    box-shadow: var(--shadow-lg);
+  }
+  .modal h2 { font-size: 26px; color: var(--red); margin-bottom: 10px; }
+  .modal p { font-size: 15px; color: var(--ink-soft); line-height: 1.5; margin-bottom: 8px; }
+  .modal .challenge {
+    background: var(--yellow-light);
+    border: 2px solid var(--yellow);
+    padding: 14px;
+    border-radius: 10px;
+    margin: 14px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .modal button {
+    padding: 12px 24px;
+    background: var(--red);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 6px;
+  }
+
+  .footer {
+    max-width: 1500px;
+    margin: 12px auto 0;
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  @media (min-width: 1400px) {
+    .casilla { font-size: 38px; min-height: 88px; }
+    .dado { width: 100px; height: 100px; font-size: 56px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div class="setup" id="setup">
+  <h1>🎲 Carrera de Factores y Múltiplos</h1>
+  <div class="sub">Configura el juego según lo que quieras repasar</div>
+
+  <div class="setup-section">
+    <label class="setup-label">1. ¿Qué vamos a repasar?</label>
+    <div class="tabs">
+      <button class="tab active" id="tab-mult" onclick="setTipo('multiplo')">Múltiplos</button>
+      <button class="tab" id="tab-fact" onclick="setTipo('factor')">Factores</button>
+    </div>
+  </div>
+
+  <div class="setup-section" id="sec-multiplos">
+    <label class="setup-label">2. Número base (múltiplos de...)</label>
+    <div class="multi-grid" id="multi-grid"></div>
+  </div>
+
+  <div class="setup-section" id="sec-factores" style="display:none;">
+    <label class="setup-label">2. Número base (factores de...)</label>
+    <div class="factor-input-wrap">
+      <input type="number" class="factor-input" id="factor-input" min="4" max="200" value="24" placeholder="Ingresa un número">
+    </div>
+    <div class="factor-hint">Recomendado: números compuestos como 24, 36, 48, 60, 72 (muchos factores).</div>
+  </div>
+
+  <div class="setup-section">
+    <label class="setup-label">3. Modo de juego</label>
+    <div class="modo-grid">
+      <div class="modo-card selected" id="modo-equipos" onclick="setModo('equipos')">
+        <div class="icon">👥</div>
+        <div class="title">Por equipos</div>
+        <div class="desc">Divide la clase en grupos que avanzan con peones en el tablero.</div>
+      </div>
+      <div class="modo-card" id="modo-azar" onclick="setModo('azar')">
+        <div class="icon">🎲</div>
+        <div class="title">Estudiantes al azar</div>
+        <div class="desc">Sin equipos. Tú sacas palitos preguntones — un peón único avanza con cada turno.</div>
+      </div>
+    </div>
+
+    <div class="equipos-config show" id="config-equipos">
+      <label class="setup-label" style="font-size: 11px; margin-bottom: 6px;">¿Cuántos equipos?</label>
+      <div class="num-equipos">
+        <button class="num-eq-btn" data-n="2" onclick="setNumEquipos(2)">2</button>
+        <button class="num-eq-btn selected" data-n="3" onclick="setNumEquipos(3)">3</button>
+        <button class="num-eq-btn" data-n="4" onclick="setNumEquipos(4)">4</button>
+      </div>
+    </div>
+
+    <div class="azar-config" id="config-azar">
+      <label class="setup-label" style="font-size: 11px; margin-bottom: 6px;">Estilo de participación</label>
+      <div class="azar-opciones">
+        <div class="azar-opcion selected" data-repite="no" onclick="setRepeticion('no')">
+          <b>Sin repetir</b> — recordatorio visible: "saca palito sin repetir hasta que todos participen".
+        </div>
+        <div class="azar-opcion" data-repite="si" onclick="setRepeticion('si')">
+          <b>Libre</b> — puede salir varias veces el mismo estudiante.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-iniciar" onclick="iniciarJuego()">Empezar juego</button>
+</div>
+
+<!-- GAME -->
+<div class="game" id="game">
+
+  <div class="header">
+    <div>
+      <h1 id="game-title">🎲 Carrera de Factores y Múltiplos</h1>
+      <div class="sub" id="game-sub">CicloMate</div>
+    </div>
+    <button class="btn-volver" onclick="volverSetup()">⬅ Cambiar configuración</button>
+  </div>
+
+  <div class="main">
+    <div class="tablero-container">
+      <div class="tablero-header">
+        <div class="tablero-titulo"><strong id="tab-titulo">Múltiplos de 3</strong></div>
+        <button class="btn-volver" onclick="reiniciar()" style="color: var(--red); background: white; border: 1.5px solid var(--red);">🔄 Reiniciar</button>
+      </div>
+      <div class="tablero" id="tablero"></div>
+    </div>
+
+    <div class="panel">
+      <div class="card" id="panel-equipos">
+        <h3>Equipos</h3>
+        <div class="equipos" id="equipos"></div>
+      </div>
+
+      <div class="card azar-panel" id="panel-azar" style="display:none;">
+        <h3>Turnos jugados</h3>
+        <div class="azar-turno" id="azar-contador">0</div>
+        <div class="azar-label" id="azar-sublabel">Saca el siguiente palito</div>
+      </div>
+
+      <div class="card dado-section">
+        <h3 id="dado-label">Turno</h3>
+        <div class="dado" id="dado">?</div>
+        <button class="btn-dado" id="btn-dado" onclick="tirarDado()">Tirar dado</button>
+      </div>
+
+      <div class="decision" id="decision">
+        <div class="decision-q" id="decision-q">¿Es múltiplo de 3?</div>
+        <div class="decision-num" id="decision-num">—</div>
+        <div class="decision-btns">
+          <button class="btn-si" onclick="responder(true)">Sí</button>
+          <button class="btn-no" onclick="responder(false)">No</button>
+        </div>
+        <div class="feedback" id="feedback"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    CicloMate · Juego de repaso · Factores y Múltiplos
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <h2>🎉 ¡<span id="ganador-nombre">Llegaron</span> a la meta!</h2>
+    <p>Para ganar el juego, deben cumplir el <b>desafío final</b>:</p>
+    <div class="challenge" id="desafio-texto">Nombrar los primeros 10 múltiplos.</div>
+    <p style="font-size: 13px; color: var(--muted);">Si lo logran, ¡ganan! Si no, el siguiente equipo tiene su oportunidad.</p>
+    <button onclick="cerrarModal()">Entendido, seguimos</button>
+  </div>
+</div>
+
+<script>
+  const config = {
+    tipo: 'multiplo',
+    base: 3,
+    modo: 'equipos',
+    numEquipos: 3,
+    repite: 'no',
+  };
+
+  const COLORES_EQUIPOS = [
+    { nombre: "Equipo Azul", color: "#2874A6" },
+    { nombre: "Equipo Naranjo", color: "#CA6F1E" },
+    { nombre: "Equipo Verde", color: "#1E8449" },
+    { nombre: "Equipo Morado", color: "#884EA0" },
+  ];
+
+  let equipos = [];
+  let turnoActual = 0;
+  let casillas = [];
+  let posAzar = -1;
+  let turnosAzar = 0;
+  let esperandoRespuesta = false;
+  let casillaEvaluando = -1;
+
+  const TOTAL_CASILLAS = 20;
+
+  function initSetup() {
+    const grid = document.getElementById('multi-grid');
+    grid.innerHTML = '';
+    for (let n = 2; n <= 12; n++) {
+      const b = document.createElement('button');
+      b.className = 'multi-btn' + (n === config.base ? ' selected' : '');
+      b.textContent = n;
+      b.onclick = () => setBaseMultiplo(n);
+      grid.appendChild(b);
+    }
+  }
+
+  function setTipo(tipo) {
+    config.tipo = tipo;
+    document.getElementById('tab-mult').classList.toggle('active', tipo === 'multiplo');
+    document.getElementById('tab-fact').classList.toggle('active', tipo === 'factor');
+    document.getElementById('sec-multiplos').style.display = tipo === 'multiplo' ? 'block' : 'none';
+    document.getElementById('sec-factores').style.display = tipo === 'factor' ? 'block' : 'none';
+    if (tipo === 'multiplo') {
+      config.base = 3;
+      setBaseMultiplo(3);
+    } else {
+      const v = parseInt(document.getElementById('factor-input').value) || 24;
+      config.base = v;
+    }
+  }
+
+  function setBaseMultiplo(n) {
+    config.base = n;
+    document.querySelectorAll('.multi-btn').forEach(b => {
+      b.classList.toggle('selected', parseInt(b.textContent) === n);
+    });
+  }
+
+  function setModo(modo) {
+    config.modo = modo;
+    document.getElementById('modo-equipos').classList.toggle('selected', modo === 'equipos');
+    document.getElementById('modo-azar').classList.toggle('selected', modo === 'azar');
+    document.getElementById('config-equipos').classList.toggle('show', modo === 'equipos');
+    document.getElementById('config-azar').classList.toggle('show', modo === 'azar');
+  }
+
+  function setNumEquipos(n) {
+    config.numEquipos = n;
+    document.querySelectorAll('.num-eq-btn').forEach(b => {
+      b.classList.toggle('selected', parseInt(b.dataset.n) === n);
+    });
+  }
+
+  function setRepeticion(r) {
+    config.repite = r;
+    document.querySelectorAll('.azar-opcion').forEach(b => {
+      b.classList.toggle('selected', b.dataset.repite === r);
+    });
+  }
+
+  // ============================================================
+  // GENERACIÓN PEDAGÓGICA DE CASILLAS (20)
+  // ============================================================
+  function generarCasillas() {
+    if (config.tipo === 'multiplo') return generarCasillasMultiplo(config.base);
+    return generarCasillasFactor(config.base);
+  }
+
+  function generarCasillasMultiplo(base) {
+    const correctas = [];
+    const maxMult = Math.min(15, Math.floor(200 / base));
+    for (let i = 1; i <= maxMult; i++) correctas.push(base * i);
+    shuffle(correctas);
+    const numCorrectas = Math.min(11, correctas.length);
+    const seleccionadas = correctas.slice(0, numCorrectas);
+
+    const candidatos = new Set();
+    for (let i = 1; i <= maxMult; i++) {
+      const m = base * i;
+      [m - 1, m + 1, m - 2, m + 2, m + 3].forEach(c => {
+        if (c > 0 && c <= 200 && c % base !== 0) candidatos.add(c);
+      });
+    }
+    let extra = 2;
+    while (candidatos.size < 30 && extra < 100) {
+      if (extra % base !== 0) candidatos.add(extra);
+      extra++;
+    }
+    const distArr = Array.from(candidatos);
+    shuffle(distArr);
+    const numDistractores = TOTAL_CASILLAS - numCorrectas;
+    const distractores = distArr.slice(0, numDistractores);
+    const resultado = [...seleccionadas, ...distractores];
+    shuffle(resultado);
+    return resultado;
+  }
+
+  function generarCasillasFactor(base) {
+    const factores = [];
+    for (let i = 1; i <= base; i++) if (base % i === 0) factores.push(i);
+
+    let seleccionadas = [];
+    const numCorrectas = 10;
+    if (factores.length >= numCorrectas) {
+      shuffle(factores);
+      seleccionadas = factores.slice(0, numCorrectas);
+    } else {
+      while (seleccionadas.length < numCorrectas) {
+        seleccionadas.push(...shuffle([...factores]));
+      }
+      seleccionadas = seleccionadas.slice(0, numCorrectas);
+    }
+
+    const distractores = new Set();
+    for (let i = 2; i <= 4; i++) {
+      if (base * i <= 200) distractores.add(base * i);
+    }
+    factores.forEach(f => {
+      [f + 1, f - 1].forEach(c => {
+        if (c > 1 && base % c !== 0) distractores.add(c);
+      });
+    });
+    const extras = [5, 7, 11, 13, 17, 19, 23, base + 1, base - 1, Math.floor(base / 3)];
+    extras.forEach(e => {
+      if (e > 1 && base % e !== 0) distractores.add(e);
+    });
+    // Añadir algunos primos pequeños que no sean factor
+    [2, 3, 5, 7, 11].forEach(p => {
+      if (base % p !== 0) distractores.add(p);
+    });
+
+    const distArr = Array.from(distractores);
+    shuffle(distArr);
+    const numDistractores = TOTAL_CASILLAS - numCorrectas;
+    const distSeleccionados = distArr.slice(0, numDistractores);
+
+    const resultado = [...seleccionadas, ...distSeleccionados];
+    shuffle(resultado);
+    return resultado;
+  }
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  // ============================================================
+  // LAYOUT
+  // ============================================================
+  const POSICIONES = [
+    { type: 'start', col: 1, row: 1 },
+    { idx: 0, col: 2, row: 1 },
+    { idx: 1, col: 3, row: 1 },
+    { idx: 2, col: 4, row: 1 },
+    { idx: 3, col: 5, row: 1 },
+    { idx: 4, col: 6, row: 1 },
+    { idx: 5, col: 7, row: 1 },
+    { idx: 6, col: 7, row: 2 },
+    { idx: 7, col: 2, row: 3 },
+    { idx: 8, col: 3, row: 3 },
+    { idx: 9, col: 4, row: 3 },
+    { idx: 10, col: 5, row: 3 },
+    { idx: 11, col: 7, row: 3 },
+    { idx: 12, col: 2, row: 4 },
+    { idx: 13, col: 7, row: 4 },
+    { idx: 14, col: 2, row: 5 },
+    { idx: 15, col: 7, row: 5 },
+    { idx: 16, col: 2, row: 6 },
+    { idx: 17, col: 3, row: 6 },
+    { idx: 18, col: 4, row: 6 },
+    { idx: 19, col: 5, row: 6 },
+    { type: 'finish', col: 7, row: 6 },
+  ];
+
+  // ============================================================
+  function iniciarJuego() {
+    if (config.tipo === 'factor') {
+      const v = parseInt(document.getElementById('factor-input').value);
+      if (!v || v < 4 || v > 200) {
+        alert("Ingresa un número válido entre 4 y 200 para factores.");
+        return;
+      }
+      config.base = v;
+    }
+
+    casillas = generarCasillas();
+
+    if (config.modo === 'equipos') {
+      equipos = [];
+      for (let i = 0; i < config.numEquipos; i++) {
+        equipos.push({ ...COLORES_EQUIPOS[i], pos: -1 });
+      }
+    } else {
+      posAzar = -1;
+      turnosAzar = 0;
+    }
+
+    turnoActual = 0;
+    esperandoRespuesta = false;
+
+    document.getElementById('setup').style.display = 'none';
+    document.getElementById('game').classList.add('active');
+
+    const tipoTxt = config.tipo === 'multiplo' ? 'Múltiplos' : 'Factores';
+    document.getElementById('tab-titulo').innerHTML = `<strong>${tipoTxt} de ${config.base}</strong>`;
+    document.getElementById('game-sub').textContent = `${tipoTxt} de ${config.base} · ${config.modo === 'equipos' ? config.numEquipos + ' equipos' : 'Estudiantes al azar'}`;
+    document.getElementById('decision-q').textContent = `¿Es ${config.tipo === 'multiplo' ? 'múltiplo' : 'factor'} de ${config.base}?`;
+
+    document.getElementById('panel-equipos').style.display = config.modo === 'equipos' ? 'block' : 'none';
+    document.getElementById('panel-azar').style.display = config.modo === 'azar' ? 'block' : 'none';
+    document.getElementById('dado-label').textContent = config.modo === 'equipos' ? 'Turno del equipo' : 'Turno';
+
+    renderTablero();
+    if (config.modo === 'equipos') renderEquipos();
+    else renderAzar();
+
+    document.getElementById('btn-dado').disabled = false;
+    document.getElementById('dado').textContent = '?';
+  }
+
+  function volverSetup() {
+    document.getElementById('setup').style.display = 'block';
+    document.getElementById('game').classList.remove('active');
+    document.getElementById('modal-bg').classList.remove('active');
+  }
+
+  function renderTablero() {
+    const cont = document.getElementById('tablero');
+    cont.innerHTML = '';
+    const tipoTxt = config.tipo === 'multiplo' ? 'múltiplo' : 'factor';
+
+    const instr = document.createElement('div');
+    instr.className = 'casilla instructions-card';
+    instr.style.gridColumn = '3 / 7';
+    instr.style.gridRow = '4 / 6';
+    instr.innerHTML = `
+      <h3>Instrucciones</h3>
+      <ol>
+        <li>${config.modo === 'equipos' ? 'Tira el dado el equipo en turno.' : 'Se saca un palito y ese estudiante responde.'}</li>
+        <li>Avanza ese número de casillas.</li>
+        <li>Decide si la casilla es ${tipoTxt} de <b>${config.base}</b>.</li>
+        <li><b>Correcto</b>: se queda. <b>Incorrecto</b>: retrocede 2.</li>
+        <li>¡Al llegar a META hay un desafío final!</li>
+      </ol>
+    `;
+    cont.appendChild(instr);
+
+    POSICIONES.forEach((p) => {
+      const el = document.createElement('div');
+      el.className = 'casilla';
+      el.style.gridColumn = p.col;
+      el.style.gridRow = p.row;
+
+      if (p.type === 'start') {
+        el.classList.add('start');
+        el.textContent = 'INICIO';
+      } else if (p.type === 'finish') {
+        el.classList.add('finish');
+        el.textContent = 'META';
+      } else {
+        el.textContent = casillas[p.idx];
+        el.dataset.idx = p.idx;
+        el.onclick = () => clickCasilla(p.idx);
+      }
+      cont.appendChild(el);
+    });
+
+    actualizarPeones();
+  }
+
+  function actualizarPeones() {
+    document.querySelectorAll('.peones').forEach(e => e.remove());
+
+    if (config.modo === 'equipos') {
+      const porCasilla = {};
+      equipos.forEach((eq, i) => {
+        if (!porCasilla[eq.pos]) porCasilla[eq.pos] = [];
+        porCasilla[eq.pos].push({ idx: i, color: eq.color });
+      });
+      dibujarPeonesEn(porCasilla);
+    } else {
+      const porCasilla = {};
+      porCasilla[posAzar] = [{ idx: 0, color: '#884EA0' }];
+      dibujarPeonesEn(porCasilla);
+    }
+  }
+
+  function dibujarPeonesEn(porCasilla) {
+    Object.entries(porCasilla).forEach(([pos, peones]) => {
+      const p = parseInt(pos);
+      let el;
+      if (p === -1) el = document.querySelector('.casilla.start');
+      else if (p >= TOTAL_CASILLAS) el = document.querySelector('.casilla.finish');
+      else el = document.querySelector(`.casilla[data-idx="${p}"]`);
+      if (!el) return;
+      const div = document.createElement('div');
+      div.className = 'peones';
+      peones.forEach(pe => {
+        const peon = document.createElement('div');
+        peon.className = 'peon';
+        peon.style.background = pe.color;
+        div.appendChild(peon);
+      });
+      el.appendChild(div);
+    });
+  }
+
+  function renderEquipos() {
+    const cont = document.getElementById('equipos');
+    cont.innerHTML = '';
+    equipos.forEach((eq, i) => {
+      const div = document.createElement('div');
+      div.className = 'equipo' + (i === turnoActual ? ' turno' : '');
+      const posTxt = eq.pos === -1 ? 'en INICIO' :
+                     eq.pos >= TOTAL_CASILLAS ? '¡en META!' :
+                     `casilla ${eq.pos + 1}/${TOTAL_CASILLAS}`;
+      div.innerHTML = `
+        <div class="equipo-color" style="background: ${eq.color};"></div>
+        <div class="equipo-info">
+          <div class="equipo-nombre">${eq.nombre}</div>
+          <div class="equipo-pos">${posTxt}</div>
+        </div>
+      `;
+      cont.appendChild(div);
+    });
+  }
+
+  function renderAzar() {
+    document.getElementById('azar-contador').textContent = turnosAzar;
+    const subtxt = config.repite === 'no'
+      ? 'Saca palito sin repetir'
+      : 'Saca cualquier palito';
+    document.getElementById('azar-sublabel').textContent = subtxt;
+  }
+
+  function tirarDado() {
+    if (esperandoRespuesta) return;
+    const btn = document.getElementById('btn-dado');
+    btn.disabled = true;
+    const dado = document.getElementById('dado');
+    dado.classList.add('rolling');
+    let contador = 0;
+    const interval = setInterval(() => {
+      dado.textContent = Math.floor(Math.random() * 6) + 1;
+      contador++;
+      if (contador > 8) {
+        clearInterval(interval);
+        const n = Math.floor(Math.random() * 6) + 1;
+        dado.textContent = n;
+        dado.classList.remove('rolling');
+        avanzar(n);
+      }
+    }, 70);
+  }
+
+  function avanzar(n) {
+    if (config.modo === 'equipos') {
+      const eq = equipos[turnoActual];
+      const nueva = Math.min(eq.pos + n, TOTAL_CASILLAS);
+      eq.pos = nueva;
+      actualizarPeones();
+      renderEquipos();
+      if (nueva >= TOTAL_CASILLAS) { mostrarGanador(); return; }
+      marcarDecision(nueva);
+    } else {
+      turnosAzar++;
+      posAzar = Math.min(posAzar + n, TOTAL_CASILLAS);
+      actualizarPeones();
+      renderAzar();
+      if (posAzar >= TOTAL_CASILLAS) { mostrarGanador(); return; }
+      marcarDecision(posAzar);
+    }
+  }
+
+  function marcarDecision(pos) {
+    document.querySelectorAll('.casilla').forEach(c => c.classList.remove('actual'));
+    const el = document.querySelector(`.casilla[data-idx="${pos}"]`);
+    if (el) el.classList.add('actual');
+    casillaEvaluando = pos;
+    const valor = casillas[pos];
+    document.getElementById('decision-num').textContent = valor;
+    document.getElementById('decision').classList.add('active');
+    document.getElementById('feedback').className = 'feedback';
+    esperandoRespuesta = true;
+  }
+
+  function esRespuestaCorrecta(valor) {
+    if (config.tipo === 'multiplo') return valor % config.base === 0;
+    return config.base % valor === 0;
+  }
+
+  function responder(dijoSi) {
+    if (!esperandoRespuesta) return;
+    const valor = casillas[casillaEvaluando];
+    const esCorrecta = esRespuestaCorrecta(valor);
+    const acerto = (dijoSi && esCorrecta) || (!dijoSi && !esCorrecta);
+    const el = document.querySelector(`.casilla[data-idx="${casillaEvaluando}"]`);
+    const feedback = document.getElementById('feedback');
+    const tipoTxt = config.tipo === 'multiplo' ? 'múltiplo' : 'factor';
+
+    if (acerto) {
+      if (el) { el.classList.remove('actual'); el.classList.add('correcta'); }
+      feedback.className = 'feedback ok';
+      feedback.innerHTML = esCorrecta
+        ? `✓ ¡Correcto! <b>${valor}</b> sí es ${tipoTxt} de ${config.base}.`
+        : `✓ ¡Correcto! <b>${valor}</b> no es ${tipoTxt} de ${config.base}.`;
+    } else {
+      if (el) { el.classList.remove('actual'); el.classList.add('incorrecta'); }
+      feedback.className = 'feedback err';
+      feedback.innerHTML = esCorrecta
+        ? `✗ Incorrecto. <b>${valor}</b> SÍ es ${tipoTxt} de ${config.base}. Retrocede 2.`
+        : `✗ Incorrecto. <b>${valor}</b> NO es ${tipoTxt} de ${config.base}. Retrocede 2.`;
+      if (config.modo === 'equipos') {
+        equipos[turnoActual].pos = Math.max(-1, equipos[turnoActual].pos - 2);
+      } else {
+        posAzar = Math.max(-1, posAzar - 2);
+      }
+    }
+
+    esperandoRespuesta = false;
+    setTimeout(() => {
+      if (el) el.classList.remove('correcta', 'incorrecta');
+      document.getElementById('decision').classList.remove('active');
+      pasarTurno();
+    }, 2800);
+  }
+
+  function pasarTurno() {
+    if (config.modo === 'equipos') {
+      turnoActual = (turnoActual + 1) % equipos.length;
+    }
+    actualizarPeones();
+    if (config.modo === 'equipos') renderEquipos();
+    else renderAzar();
+    document.getElementById('btn-dado').disabled = false;
+    document.getElementById('dado').textContent = '?';
+  }
+
+  function clickCasilla(idx) {
+    if (esperandoRespuesta) return;
+    const valor = casillas[idx];
+    const esCorrecta = esRespuestaCorrecta(valor);
+    const el = document.querySelector(`.casilla[data-idx="${idx}"]`);
+    if (!el) return;
+    el.classList.add(esCorrecta ? 'correcta' : 'incorrecta');
+    setTimeout(() => el.classList.remove('correcta', 'incorrecta'), 1200);
+  }
+
+  function mostrarGanador() {
+    let nombre, desafio;
+    if (config.modo === 'equipos') nombre = equipos[turnoActual].nombre;
+    else nombre = `La clase (en ${turnosAzar} turnos)`;
+    if (config.tipo === 'multiplo') {
+      desafio = `Nombrar los primeros 10 múltiplos de ${config.base}.`;
+    } else {
+      const facs = [];
+      for (let i = 1; i <= config.base; i++) if (config.base % i === 0) facs.push(i);
+      desafio = `Nombrar todos los factores de ${config.base} (son ${facs.length} en total).`;
+    }
+    document.getElementById('ganador-nombre').textContent = nombre;
+    document.getElementById('desafio-texto').textContent = desafio;
+    document.getElementById('modal-bg').classList.add('active');
+    document.getElementById('btn-dado').disabled = true;
+  }
+
+  function cerrarModal() { document.getElementById('modal-bg').classList.remove('active'); }
+  function reiniciar() { iniciarJuego(); }
+
+  document.addEventListener('DOMContentLoaded', initSetup);
+</script>
+
+</body>
+</html>
