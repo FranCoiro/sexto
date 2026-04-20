@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Factores vs. Múltiplos · CicloMate</title>
+<style>
+  :root {
+    --red: #C0392B;
+    --red-dark: #922B21;
+    --green: #1E8449;
+    --green-light: #D4EFDF;
+    --yellow: #F1C40F;
+    --yellow-light: #FCF3CF;
+    --ink: #1a1a1a;
+    --ink-soft: #444;
+    --muted: #888;
+    --line: #d8d8d8;
+    --bg: #fafafa;
+    --card: #ffffff;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.10);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* -------------------- Header -------------------- */
+  .header {
+    max-width: 1200px;
+    margin: 0 auto 20px;
+    background: var(--red);
+    color: white;
+    padding: 20px 28px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    box-shadow: var(--shadow-md);
+  }
+  .header h1 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .header .sub {
+    font-size: 13px;
+    opacity: 0.92;
+    margin-top: 2px;
+  }
+
+  /* -------------------- Controles: selector y score -------------------- */
+  .controls {
+    max-width: 1200px;
+    margin: 0 auto 18px;
+    background: var(--card);
+    padding: 14px 20px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--line);
+  }
+  .estaciones {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .est-btn {
+    padding: 8px 14px;
+    border: 2px solid var(--line);
+    background: white;
+    color: var(--ink-soft);
+    font-weight: 600;
+    font-size: 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .est-btn:hover { border-color: var(--red); color: var(--red); }
+  .est-btn.active {
+    background: var(--red);
+    color: white;
+    border-color: var(--red);
+  }
+  .score-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .score {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink-soft);
+  }
+  .score .num { color: var(--red); font-size: 18px; }
+  .btn-reset {
+    padding: 8px 14px;
+    background: white;
+    color: var(--red);
+    border: 2px solid var(--red);
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.15s;
+  }
+  .btn-reset:hover { background: var(--red); color: white; }
+  .btn-verificar {
+    padding: 8px 14px;
+    background: var(--red);
+    color: white;
+    border: 2px solid var(--red);
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.15s;
+  }
+  .btn-verificar:hover { background: var(--red-dark); }
+
+  /* -------------------- Tablero principal -------------------- */
+  .tablero {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: var(--card);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--line);
+  }
+
+  .tablero-titulo {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  .tablero-titulo strong { color: var(--red); font-size: 22px; }
+  .tablero-inst {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  /* -------------------- Las 3 columnas drop zones -------------------- */
+  .columnas {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .columna {
+    border: 2px dashed var(--line);
+    border-radius: 10px;
+    min-height: 220px;
+    overflow: hidden;
+    background: #fcfcfc;
+    transition: all 0.15s;
+  }
+  .columna.drag-over {
+    border-color: var(--red);
+    background: #fdf2f0;
+  }
+  .col-header {
+    background: var(--red);
+    color: white;
+    padding: 12px 14px;
+    font-weight: 700;
+    font-size: 15px;
+    text-align: center;
+    letter-spacing: 0.3px;
+  }
+  .col-factor .col-header { background: #2874A6; }
+  .col-multiplo .col-header { background: #CA6F1E; }
+  .col-ninguno .col-header { background: #7D6608; }
+  .col-content {
+    padding: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-content: flex-start;
+    min-height: 170px;
+  }
+
+  /* -------------------- Pool de números -------------------- */
+  .pool {
+    background: #f5f5f5;
+    border: 2px solid var(--line);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .pool-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+  .pool-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 60px;
+  }
+
+  /* -------------------- Números arrastrables -------------------- */
+  .numero {
+    background: #5DADE2;
+    color: white;
+    font-weight: 700;
+    font-size: 20px;
+    padding: 12px 16px;
+    min-width: 56px;
+    text-align: center;
+    border-radius: 6px;
+    cursor: grab;
+    user-select: none;
+    transition: transform 0.1s, box-shadow 0.15s;
+    box-shadow: var(--shadow-sm);
+    touch-action: none;
+  }
+  .numero:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+  .numero:active { cursor: grabbing; }
+  .numero.dragging { opacity: 0.4; }
+  .numero.correcto {
+    background: var(--green);
+    animation: pulseOk 0.4s ease;
+  }
+  .numero.incorrecto {
+    background: #E74C3C;
+    animation: shake 0.4s ease;
+  }
+  @keyframes pulseOk {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+  }
+
+  /* -------------------- Feedback final -------------------- */
+  .resultado {
+    margin-top: 18px;
+    padding: 16px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    text-align: center;
+    display: none;
+  }
+  .resultado.ok {
+    display: block;
+    background: var(--green-light);
+    color: var(--green);
+    border: 2px solid var(--green);
+  }
+  .resultado.parcial {
+    display: block;
+    background: var(--yellow-light);
+    color: #7D6608;
+    border: 2px solid var(--yellow);
+  }
+
+  /* -------------------- Responsive tablet/móvil -------------------- */
+  @media (max-width: 700px) {
+    .columnas { grid-template-columns: 1fr; }
+    .numero { font-size: 18px; padding: 10px 14px; min-width: 50px; }
+    .header h1 { font-size: 20px; }
+  }
+
+  /* Footer */
+  .footer {
+    max-width: 1200px;
+    margin: 20px auto 0;
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    padding: 12px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>Factores vs. Múltiplos</h1>
+    <div class="sub">Arrastra cada número a la columna correcta · 6° básico · CicloMate</div>
+  </div>
+</div>
+
+<div class="controls">
+  <div>
+    <div style="font-size: 12px; color: var(--muted); margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px;">Estaciones</div>
+    <div class="estaciones" id="estaciones"></div>
+  </div>
+  <div class="score-box">
+    <div class="score">Aciertos: <span class="num" id="score-ok">0</span> / <span id="score-total">14</span></div>
+    <button class="btn-verificar" onclick="verificar()">Verificar</button>
+    <button class="btn-reset" onclick="reiniciar()">Reiniciar</button>
+  </div>
+</div>
+
+<div class="tablero">
+  <div class="tablero-titulo">Estación <span id="num-est">1</span>: Factores y Múltiplos de <strong id="num-base">12</strong></div>
+  <div class="tablero-inst">Cada número va en una sola columna. Si no es factor ni múltiplo, va en «Ninguno».</div>
+
+  <div class="columnas">
+    <div class="columna col-factor" data-tipo="factor">
+      <div class="col-header">Factores de <span class="n-base">12</span></div>
+      <div class="col-content" id="col-factor"></div>
+    </div>
+    <div class="columna col-multiplo" data-tipo="multiplo">
+      <div class="col-header">Múltiplos de <span class="n-base">12</span></div>
+      <div class="col-content" id="col-multiplo"></div>
+    </div>
+    <div class="columna col-ninguno" data-tipo="ninguno">
+      <div class="col-header">Ninguno</div>
+      <div class="col-content" id="col-ninguno"></div>
+    </div>
+  </div>
+
+  <div class="pool">
+    <div class="pool-label">Números para clasificar</div>
+    <div class="pool-content" id="pool"></div>
+  </div>
+
+  <div class="resultado" id="resultado"></div>
+</div>
+
+<div class="footer">
+  CicloMate · Material pedagógico para 2° ciclo básico · Factores vs. Múltiplos (interactivo)
+</div>
+
+<script>
+  // ============================================================
+  // DATOS: las mismas 6 tablas que el PDF
+  // ============================================================
+  const TABLAS = [
+    { base: 12, numeros: [3, 24, 6, 60, 7, 4, 72, 48, 36, 9, 2, 5, 144, 18] },
+    { base: 15, numeros: [3, 45, 5, 30, 6, 1, 75, 9, 60, 25, 15, 90, 12, 50] },
+    { base: 18, numeros: [2, 36, 9, 54, 4, 6, 72, 12, 3, 90, 27, 1, 108, 50] },
+    { base: 20, numeros: [4, 40, 10, 60, 3, 2, 80, 8, 5, 100, 30, 1, 120, 25] },
+    { base: 24, numeros: [6, 48, 8, 72, 5, 12, 96, 16, 4, 120, 36, 3, 144, 18] },
+    { base: 36, numeros: [9, 72, 12, 108, 5, 6, 144, 24, 4, 18, 48, 3, 60, 8] },
+  ];
+
+  let estacionActual = 0;
+
+  // ============================================================
+  // CLASIFICACIÓN
+  // ============================================================
+  function clasificar(base, n) {
+    if (n === base) return 'factor'; // convención: el propio número es factor
+    if (base % n === 0) return 'factor';
+    if (n % base === 0) return 'multiplo';
+    return 'ninguno';
+  }
+
+  // ============================================================
+  // RENDER DE UNA ESTACIÓN
+  // ============================================================
+  function renderEstacion(idx) {
+    estacionActual = idx;
+    const tabla = TABLAS[idx];
+
+    // Actualizar headers
+    document.getElementById('num-est').textContent = idx + 1;
+    document.getElementById('num-base').textContent = tabla.base;
+    document.querySelectorAll('.n-base').forEach(el => el.textContent = tabla.base);
+    document.getElementById('score-total').textContent = tabla.numeros.length;
+
+    // Botones estación
+    document.querySelectorAll('.est-btn').forEach((b, i) => {
+      b.classList.toggle('active', i === idx);
+    });
+
+    // Limpiar todas las columnas
+    ['col-factor', 'col-multiplo', 'col-ninguno'].forEach(id => {
+      document.getElementById(id).innerHTML = '';
+    });
+
+    // Poblar el pool con números (mezclados aleatoriamente para variar)
+    const pool = document.getElementById('pool');
+    pool.innerHTML = '';
+    const nums = [...tabla.numeros].sort(() => Math.random() - 0.5);
+    nums.forEach(n => {
+      const el = document.createElement('div');
+      el.className = 'numero';
+      el.textContent = n;
+      el.draggable = true;
+      el.dataset.valor = n;
+      agregarEventosDrag(el);
+      pool.appendChild(el);
+    });
+
+    // Reset score y resultado
+    actualizarScore();
+    document.getElementById('resultado').className = 'resultado';
+    document.getElementById('resultado').textContent = '';
+  }
+
+  // ============================================================
+  // DRAG & DROP
+  // ============================================================
+  let elementoArrastrado = null;
+
+  function agregarEventosDrag(el) {
+    el.addEventListener('dragstart', (e) => {
+      elementoArrastrado = el;
+      el.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    el.addEventListener('dragend', () => {
+      el.classList.remove('dragging');
+      elementoArrastrado = null;
+    });
+
+    // --- Touch support para tablets ---
+    let touchPos = null;
+    el.addEventListener('touchstart', (e) => {
+      elementoArrastrado = el;
+      el.classList.add('dragging');
+      touchPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }, { passive: true });
+
+    el.addEventListener('touchmove', (e) => {
+      if (!touchPos) return;
+      e.preventDefault();
+      const t = e.touches[0];
+      el.style.position = 'fixed';
+      el.style.left = (t.clientX - 30) + 'px';
+      el.style.top = (t.clientY - 20) + 'px';
+      el.style.zIndex = 9999;
+      el.style.pointerEvents = 'none';
+
+      // Highlight de columna
+      const elBajo = document.elementFromPoint(t.clientX, t.clientY);
+      document.querySelectorAll('.columna').forEach(c => c.classList.remove('drag-over'));
+      const col = elBajo?.closest('.columna');
+      if (col) col.classList.add('drag-over');
+    }, { passive: false });
+
+    el.addEventListener('touchend', (e) => {
+      if (!touchPos) return;
+      el.style.position = '';
+      el.style.left = '';
+      el.style.top = '';
+      el.style.zIndex = '';
+      el.style.pointerEvents = '';
+      el.classList.remove('dragging');
+
+      const t = e.changedTouches[0];
+      const elBajo = document.elementFromPoint(t.clientX, t.clientY);
+      const col = elBajo?.closest('.columna');
+      document.querySelectorAll('.columna').forEach(c => c.classList.remove('drag-over'));
+
+      if (col) {
+        const content = col.querySelector('.col-content');
+        content.appendChild(el);
+      } else {
+        // Si lo soltó afuera, vuelve al pool
+        document.getElementById('pool').appendChild(el);
+      }
+      touchPos = null;
+      elementoArrastrado = null;
+    });
+  }
+
+  // Drop zones: las 3 columnas + el pool
+  function configurarDropZones() {
+    const zones = [
+      ...document.querySelectorAll('.columna'),
+      document.querySelector('.pool'),
+    ];
+    zones.forEach(zone => {
+      zone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        zone.classList.add('drag-over');
+      });
+      zone.addEventListener('dragleave', () => {
+        zone.classList.remove('drag-over');
+      });
+      zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('drag-over');
+        if (!elementoArrastrado) return;
+
+        const destino = zone.classList.contains('columna')
+          ? zone.querySelector('.col-content')
+          : zone.querySelector('.pool-content');
+        destino.appendChild(elementoArrastrado);
+
+        // Quitar estado visual previo al mover
+        elementoArrastrado.classList.remove('correcto', 'incorrecto');
+      });
+    });
+  }
+
+  // ============================================================
+  // VERIFICAR
+  // ============================================================
+  function verificar() {
+    const base = TABLAS[estacionActual].base;
+    let ok = 0, total = 0;
+    let sinClasificar = 0;
+
+    ['factor', 'multiplo', 'ninguno'].forEach(tipo => {
+      const col = document.querySelector(`.columna[data-tipo="${tipo}"] .col-content`);
+      col.querySelectorAll('.numero').forEach(el => {
+        total++;
+        const n = parseInt(el.dataset.valor);
+        const correcto = clasificar(base, n);
+        if (correcto === tipo) {
+          el.classList.add('correcto');
+          el.classList.remove('incorrecto');
+          ok++;
+        } else {
+          el.classList.add('incorrecto');
+          el.classList.remove('correcto');
+        }
+      });
+    });
+
+    sinClasificar = document.getElementById('pool').querySelectorAll('.numero').length;
+
+    document.getElementById('score-ok').textContent = ok;
+
+    const res = document.getElementById('resultado');
+    if (ok === TABLAS[estacionActual].numeros.length) {
+      res.className = 'resultado ok';
+      res.textContent = `¡Excelente! Clasificaste correctamente los ${ok} números.`;
+    } else if (sinClasificar > 0) {
+      res.className = 'resultado parcial';
+      res.textContent = `Aciertos: ${ok} de ${TABLAS[estacionActual].numeros.length}. Te faltan ${sinClasificar} números por clasificar.`;
+    } else {
+      res.className = 'resultado parcial';
+      res.textContent = `Aciertos: ${ok} de ${TABLAS[estacionActual].numeros.length}. Revisa los números marcados en rojo.`;
+    }
+  }
+
+  function actualizarScore() {
+    document.getElementById('score-ok').textContent = 0;
+  }
+
+  function reiniciar() {
+    renderEstacion(estacionActual);
+  }
+
+  // ============================================================
+  // INIT
+  // ============================================================
+  function init() {
+    // Botones de estación
+    const cont = document.getElementById('estaciones');
+    TABLAS.forEach((t, i) => {
+      const b = document.createElement('button');
+      b.className = 'est-btn';
+      b.textContent = `${i + 1} · ${t.base}`;
+      b.onclick = () => renderEstacion(i);
+      cont.appendChild(b);
+    });
+    configurarDropZones();
+    renderEstacion(0);
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+</script>
+
+</body>
+</html>
