@@ -189,12 +189,11 @@
   }
 
   .piece.placed {
-    cursor: default;
     filter: drop-shadow(0 1px 2px rgba(0,0,0,0.08));
   }
 
-  .piece.locked {
-    pointer-events: none;
+  .piece.snapped {
+    cursor: grab;
   }
 
   .piece.entering {
@@ -1043,7 +1042,6 @@ function attachDragHandlers(el, pieceIdx) {
   let startX, startY, initialLeft, initialTop;
   
   function onPointerDown(e) {
-    if (el.classList.contains('locked')) return;
     e.preventDefault();
     isDragging = true;
     el.classList.add('dragging');
@@ -1081,34 +1079,33 @@ function attachDragHandlers(el, pieceIdx) {
     document.removeEventListener('pointermove', onPointerMove);
     document.removeEventListener('pointerup', onPointerUp);
     
-    // Chequear si se soltó sobre el tablero
     const boardRect = board.getBoundingClientRect();
     const elRect = el.getBoundingClientRect();
     const elCenterX = elRect.left + elRect.width / 2;
     const elCenterY = elRect.top + elRect.height / 2;
-    
     const piece = pieces[pieceIdx];
     
-    if (elCenterX >= boardRect.left && elCenterX <= boardRect.right &&
-        elCenterY >= boardRect.top && elCenterY <= boardRect.bottom) {
-      // Calcular la posición correcta de esta pieza
+    const insideBoard = elCenterX >= boardRect.left && elCenterX <= boardRect.right &&
+                        elCenterY >= boardRect.top && elCenterY <= boardRect.bottom;
+    
+    if (insideBoard) {
+      // Calcular posición correcta
       const scale = boardRect.width / piece.boardSize;
       const correctCenterX = boardRect.left + (piece.col * piece.pieceW + piece.pieceW / 2) * scale;
       const correctCenterY = boardRect.top + (piece.row * piece.pieceH + piece.pieceH / 2) * scale;
-      
       const distance = Math.hypot(elCenterX - correctCenterX, elCenterY - correctCenterY);
-      const snapThreshold = Math.min(piece.pieceW, piece.pieceH) * scale * 0.5;
+      // Snap generoso: 70% del tamaño de la pieza
+      const snapThreshold = Math.min(piece.pieceW, piece.pieceH) * scale * 0.7;
       
       if (distance < snapThreshold) {
-        // Snap a la posición correcta
+        // Snap a posición correcta
         snapPieceToBoard(el, pieceIdx);
       } else {
-        // Posición libre dentro del tablero (se queda donde se soltó pero mal puesta)
-        // Retornar a bandeja
-        returnToTray(el, pieceIdx);
+        // Libre dentro del tablero: se queda donde se soltó
+        placePieceFreelyOnBoard(el, pieceIdx, elRect);
       }
     } else {
-      // Fuera del tablero → volver a la bandeja
+      // Fuera del tablero → vuelve a la bandeja
       returnToTray(el, pieceIdx);
     }
   }
@@ -1122,7 +1119,6 @@ function snapPieceToBoard(el, pieceIdx) {
   const scale = boardRect.width / piece.boardSize;
   const tabOverflow = piece.pieceW * 0.22;
   
-  // Posicionar la pieza relativa al board
   el.style.position = 'absolute';
   el.style.left = `${(piece.col * piece.pieceW - tabOverflow) * scale}px`;
   el.style.top = `${(piece.row * piece.pieceH - tabOverflow) * scale}px`;
@@ -1131,7 +1127,8 @@ function snapPieceToBoard(el, pieceIdx) {
   el.style.zIndex = '1';
   
   board.appendChild(el);
-  el.classList.add('placed', 'locked');
+  el.classList.remove('dragging');
+  el.classList.add('placed', 'snapped');
   piecesPlaced.add(pieceIdx);
   
   const ph = document.getElementById('boardPlaceholder');
@@ -1139,16 +1136,45 @@ function snapPieceToBoard(el, pieceIdx) {
   
   playSound('place');
   
-  // Chequear victoria
-  const totalNums = state.numbers.length;
-  if (piecesPlaced.size === pieces.length && completed.size === totalNums) {
-    setTimeout(() => {
-      victoryText.classList.add('show');
-      board.classList.add('complete');
-      playSound('complete');
-      launchConfetti();
-    }, 500);
-  }
+  // Chequear victoria después del snap
+  checkVictory();
+}
+
+function placePieceFreelyOnBoard(el, pieceIdx, elRect) {
+  // Mueve la pieza al tablero conservando su posición visual
+  const piece = pieces[pieceIdx];
+  const boardRect = board.getBoundingClientRect();
+  const scale = boardRect.width / piece.boardSize;
+  const tabOverflow = piece.pieceW * 0.22;
+  
+  // Tamaño correcto de la pieza dentro del tablero
+  const targetW = (piece.pieceW + 2 * tabOverflow) * scale;
+  const targetH = (piece.pieceH + 2 * tabOverflow) * scale;
+  
+  // Calcular posición relativa al board (centrar la pieza donde estaba al soltar)
+  const currentCenterX = elRect.left + elRect.width / 2;
+  const currentCenterY = elRect.top + elRect.height / 2;
+  const leftRelToBoard = currentCenterX - boardRect.left - targetW / 2;
+  const topRelToBoard = currentCenterY - boardRect.top - targetH / 2;
+  
+  el.style.position = 'absolute';
+  el.style.left = `${leftRelToBoard}px`;
+  el.style.top = `${topRelToBoard}px`;
+  el.style.width = `${targetW}px`;
+  el.style.height = `${targetH}px`;
+  el.style.zIndex = '2';
+  
+  board.appendChild(el);
+  el.classList.remove('dragging', 'snapped');
+  el.classList.add('placed');
+  // NO se agrega a piecesPlaced — no está en su posición correcta
+  piecesPlaced.delete(pieceIdx);
+  
+  const ph = document.getElementById('boardPlaceholder');
+  if (ph) ph.style.display = 'none';
+  
+  playSound('drop');
+  checkVictory();
 }
 
 function returnToTray(el, pieceIdx) {
@@ -1163,9 +1189,32 @@ function returnToTray(el, pieceIdx) {
   el.style.width = `${viewBoxW * scale}px`;
   el.style.height = `${viewBoxH * scale}px`;
   el.style.zIndex = '';
+  el.classList.remove('placed', 'snapped');
   tray.appendChild(el);
+  piecesPlaced.delete(pieceIdx);
   layoutTrayPieces();
   playSound('drop');
+  
+  // Si no queda ninguna pieza en el tablero, mostrar placeholder
+  if (board.querySelectorAll('.piece').length === 0) {
+    const ph = document.getElementById('boardPlaceholder');
+    if (ph) ph.style.display = 'flex';
+  }
+}
+
+function checkVictory() {
+  const totalNums = state.numbers.length;
+  if (piecesPlaced.size === pieces.length && completed.size === totalNums) {
+    setTimeout(() => {
+      victoryText.classList.add('show');
+      board.classList.add('complete');
+      playSound('complete');
+      launchConfetti();
+    }, 400);
+  } else {
+    victoryText.classList.remove('show');
+    board.classList.remove('complete');
+  }
 }
 
 // ===== Panel de decodificación =====
@@ -1527,8 +1576,8 @@ configOverlay.addEventListener('click', (e) => {
 // Re-layout al cambiar tamaño ventana
 window.addEventListener('resize', () => {
   layoutTrayPieces();
-  // Re-posicionar piezas colocadas
-  document.querySelectorAll('.piece.locked').forEach(el => {
+  // Re-posicionar piezas snappeadas (las libres no se reajustan — su posición era arbitraria)
+  document.querySelectorAll('.piece.snapped').forEach(el => {
     const idx = parseInt(el.dataset.idx, 10);
     if (pieces[idx]) {
       const piece = pieces[idx];
