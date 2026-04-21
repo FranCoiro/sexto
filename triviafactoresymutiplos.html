@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trivia V/F — Factores y múltiplos</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #1e1b4b;
+    --bg-2: #312e81;
+    --surface: #ffffff;
+    --ink: #1e1b4b;
+    --ink-soft: #4c4982;
+    --accent: #f59e0b;
+    --v-color: #10b981;
+    --v-soft: #d1fae5;
+    --f-color: #ef4444;
+    --f-soft: #fee2e2;
+    --gold: #fbbf24;
+    --card-back: #7c3aed;
+    --card-back-2: #a855f7;
+  }
+
+  body {
+    font-family: 'Fredoka', sans-serif;
+    background: radial-gradient(ellipse at top, var(--bg-2), var(--bg));
+    color: white;
+    min-height: 100vh;
+    padding: 24px;
+    overflow-x: hidden;
+  }
+
+  .app { max-width: 1200px; margin: 0 auto; }
+
+  /* ===== Header ===== */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .title {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .title-icon {
+    width: 52px;
+    height: 52px;
+    background: var(--accent);
+    color: var(--bg);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    font-weight: 700;
+  }
+
+  .title h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .title .sub {
+    font-size: 0.95rem;
+    opacity: 0.7;
+    margin-top: 2px;
+  }
+
+  .score-box {
+    background: rgba(255,255,255,0.08);
+    border: 2px solid rgba(255,255,255,0.12);
+    border-radius: 16px;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .score-label {
+    font-size: 0.8rem;
+    opacity: 0.7;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .score-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 1.8rem;
+    color: var(--gold);
+    min-width: 80px;
+    text-align: right;
+  }
+
+  /* ===== Tablero de cartas ===== */
+  .board {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    perspective: 1200px;
+  }
+
+  @media (max-width: 800px) {
+    .board { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .card {
+    aspect-ratio: 3 / 4;
+    position: relative;
+    transform-style: preserve-3d;
+    cursor: pointer;
+    transition: transform 0.8s cubic-bezier(0.5, -0.3, 0.5, 1.3);
+  }
+
+  .card.flipped { transform: rotateY(180deg); cursor: default; }
+  .card.answered { cursor: not-allowed; }
+  .card.answered:not(.flipped) { transform: scale(0.95); opacity: 0.55; }
+
+  .card:hover:not(.flipped):not(.answered) {
+    transform: translateY(-6px) rotateZ(-2deg);
+  }
+
+  .card-face {
+    position: absolute;
+    inset: 0;
+    border-radius: 18px;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  }
+
+  .card-back {
+    background: linear-gradient(135deg, var(--card-back), var(--card-back-2));
+    flex-direction: column;
+    color: white;
+  }
+
+  .card-back::before {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    border: 3px solid rgba(255,255,255,0.25);
+    border-radius: 12px;
+  }
+
+  .card-number {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 3.5rem;
+    text-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 1;
+  }
+
+  .card-back-label {
+    font-size: 0.85rem;
+    opacity: 0.85;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 6px;
+    z-index: 1;
+  }
+
+  .card-front {
+    background: white;
+    color: var(--ink);
+    transform: rotateY(180deg);
+    font-weight: 600;
+    text-align: center;
+    font-size: 1rem;
+    line-height: 1.4;
+  }
+
+  .card-status-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1rem;
+    color: white;
+  }
+
+  .card-status-badge.correct { background: var(--v-color); }
+  .card-status-badge.incorrect { background: var(--f-color); }
+
+  /* ===== Modal pregunta ===== */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 8, 35, 0.88);
+    backdrop-filter: blur(10px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 100;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .modal-overlay.show { display: flex; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .modal {
+    background: white;
+    color: var(--ink);
+    border-radius: 28px;
+    padding: 40px;
+    max-width: 640px;
+    width: 100%;
+    position: relative;
+    animation: modalPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes modalPop {
+    from { opacity: 0; transform: scale(0.8) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .modal-number {
+    position: absolute;
+    top: -20px;
+    left: 30px;
+    background: var(--accent);
+    color: var(--bg);
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 1.2rem;
+    padding: 8px 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+  }
+
+  .modal-affirmation {
+    font-size: 1.6rem;
+    line-height: 1.4;
+    font-weight: 500;
+    text-align: center;
+    padding: 24px 0 32px;
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ===== Cronómetro ===== */
+  .timer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .timer-ring {
+    position: relative;
+    width: 100px;
+    height: 100px;
+  }
+
+  .timer-ring svg {
+    transform: rotate(-90deg);
+  }
+
+  .timer-ring-bg {
+    stroke: #e5e7eb;
+    fill: none;
+    stroke-width: 8;
+  }
+
+  .timer-ring-progress {
+    stroke: var(--accent);
+    fill: none;
+    stroke-width: 8;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.1s linear, stroke 0.3s;
+  }
+
+  .timer-ring.warn .timer-ring-progress { stroke: var(--f-color); }
+
+  .timer-ring-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .timer-ring.warn .timer-ring-text { color: var(--f-color); }
+
+  .timer-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .timer-points {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .timer-points-label {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+  }
+
+  /* ===== Botones V/F ===== */
+  .answer-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .answer-btn {
+    padding: 22px;
+    border: none;
+    border-radius: 18px;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: white;
+    letter-spacing: 2px;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.15);
+  }
+
+  .answer-btn:active {
+    transform: translateY(3px);
+    box-shadow: 0 3px 0 rgba(0,0,0,0.15);
+  }
+
+  .answer-btn.v {
+    background: var(--v-color);
+  }
+
+  .answer-btn.v:hover {
+    background: #059669;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 0 rgba(0,0,0,0.15);
+  }
+
+  .answer-btn.f {
+    background: var(--f-color);
+  }
+
+  .answer-btn.f:hover {
+    background: #dc2626;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 0 rgba(0,0,0,0.15);
+  }
+
+  .answer-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* ===== Pantalla de tensión ===== */
+  .tension-screen {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle, rgba(124, 58, 237, 0.95), rgba(10, 8, 35, 0.98));
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    animation: tensionPulse 0.4s ease;
+  }
+
+  .tension-screen.show { display: flex; }
+
+  @keyframes tensionPulse {
+    0% { opacity: 0; transform: scale(1.1); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+
+  .tension-text {
+    font-size: 3rem;
+    font-weight: 700;
+    color: white;
+    letter-spacing: 8px;
+    text-transform: uppercase;
+    animation: tensionDots 1.5s ease-in-out infinite;
+  }
+
+  @keyframes tensionDots {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.05); }
+  }
+
+  /* ===== Pantalla de resultado ===== */
+  .result-screen {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 300;
+    padding: 20px;
+    animation: fadeIn 0.3s;
+  }
+
+  .result-screen.show { display: flex; }
+
+  .result-screen.correct {
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.95), rgba(6, 95, 70, 0.98));
+  }
+
+  .result-screen.incorrect {
+    background: radial-gradient(circle, rgba(239, 68, 68, 0.95), rgba(153, 27, 27, 0.98));
+  }
+
+  .result-content {
+    background: white;
+    color: var(--ink);
+    border-radius: 28px;
+    padding: 32px 36px;
+    max-width: 580px;
+    width: 100%;
+    text-align: center;
+    animation: resultPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes resultPop {
+    from { opacity: 0; transform: scale(0.5) rotate(-5deg); }
+    to { opacity: 1; transform: scale(1) rotate(0); }
+  }
+
+  .result-icon {
+    font-size: 4.5rem;
+    line-height: 1;
+    margin-bottom: 12px;
+  }
+
+  .result-title {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .result-title.ok { color: var(--v-color); }
+  .result-title.err { color: var(--f-color); }
+
+  .result-points {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 20px;
+  }
+
+  .result-correction {
+    background: #f8f6ff;
+    border-left: 4px solid var(--accent);
+    padding: 16px 20px;
+    border-radius: 12px;
+    text-align: left;
+    margin-bottom: 24px;
+  }
+
+  .result-correction-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+
+  .result-correction-text {
+    font-size: 1.05rem;
+    line-height: 1.5;
+  }
+
+  .btn-continue {
+    background: var(--bg);
+    color: white;
+    border: none;
+    padding: 14px 40px;
+    font-family: inherit;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-continue:hover {
+    background: var(--bg-2);
+    transform: translateY(-2px);
+  }
+
+  /* ===== Pantalla final ===== */
+  .final-screen { text-align: center; }
+
+  .final-score {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 4rem;
+    font-weight: 700;
+    color: var(--gold);
+    margin: 20px 0;
+    line-height: 1;
+  }
+
+  .final-stats {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin: 20px 0;
+  }
+
+  .stat-item {
+    background: #f8f6ff;
+    padding: 12px 20px;
+    border-radius: 12px;
+    min-width: 100px;
+  }
+
+  .stat-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 1.6rem;
+  }
+
+  .stat-label {
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* ===== Confeti ===== */
+  .confetti {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    pointer-events: none;
+    z-index: 400;
+  }
+
+  @keyframes fall {
+    to { transform: translateY(120vh) rotate(720deg); opacity: 0; }
+  }
+
+  /* Botón reset discreto */
+  .reset-mini {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(255,255,255,0.08);
+    border: 2px solid rgba(255,255,255,0.15);
+    color: white;
+    padding: 8px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.8rem;
+    opacity: 0.6;
+  }
+
+  .reset-mini:hover { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <div class="title">
+      <div class="title-icon">?</div>
+      <div>
+        <h1>Trivia V / F</h1>
+        <div class="sub">Factores y múltiplos</div>
+      </div>
+    </div>
+    <div class="score-box">
+      <div>
+        <div class="score-label">Puntaje</div>
+      </div>
+      <div class="score-value" id="scoreValue">0</div>
+    </div>
+  </div>
+
+  <div class="board" id="board"></div>
+</div>
+
+<!-- Modal de pregunta -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-number" id="modalNumber">#1</div>
+    <div class="modal-affirmation" id="modalAffirmation">...</div>
+    <div class="timer">
+      <div class="timer-ring" id="timerRing">
+        <svg width="100" height="100">
+          <circle class="timer-ring-bg" cx="50" cy="50" r="44" />
+          <circle class="timer-ring-progress" id="timerProgress" cx="50" cy="50" r="44"
+                  stroke-dasharray="276.46" stroke-dashoffset="0" />
+        </svg>
+        <div class="timer-ring-text" id="timerText">10</div>
+      </div>
+      <div class="timer-info">
+        <div class="timer-points" id="timerPoints">100 pts</div>
+        <div class="timer-points-label">si aciertan ahora</div>
+      </div>
+    </div>
+    <div class="answer-buttons">
+      <button class="answer-btn v" id="btnV">VERDADERO</button>
+      <button class="answer-btn f" id="btnF">FALSO</button>
+    </div>
+  </div>
+</div>
+
+<!-- Pantalla de tensión -->
+<div class="tension-screen" id="tensionScreen">
+  <div class="tension-text">Verificando...</div>
+</div>
+
+<!-- Pantalla de resultado -->
+<div class="result-screen" id="resultScreen">
+  <div class="result-content">
+    <div class="result-icon" id="resultIcon">✓</div>
+    <div class="result-title" id="resultTitle">¡Correcto!</div>
+    <div class="result-points" id="resultPoints">+100 puntos</div>
+    <div class="result-correction">
+      <div class="result-correction-label" id="correctionLabel">Justificación</div>
+      <div class="result-correction-text" id="correctionText">...</div>
+    </div>
+    <button class="btn-continue" id="btnContinue">Continuar</button>
+  </div>
+</div>
+
+<button class="reset-mini" id="resetBtn">↻ Reiniciar juego</button>
+
+<script>
+const QUESTIONS = [
+  { n: 1, text: "El 7 es factor de 21", answer: true,
+    justification: "Porque 21 ÷ 7 = 3 (exacto)" },
+  { n: 2, text: "El 15 es múltiplo de 3", answer: true,
+    justification: "Porque 3 · 5 = 15" },
+  { n: 3, text: "El 1 es un número primo", answer: false,
+    justification: "El 1 no es primo ni compuesto" },
+  { n: 4, text: "Todos los números pares son compuestos", answer: false,
+    justification: "El 2 es par y es primo" },
+  { n: 5, text: "El 9 es múltiplo de 3", answer: true,
+    justification: "Porque 3 · 3 = 9" },
+  { n: 6, text: "El 4 es factor de 10", answer: false,
+    justification: "10 ÷ 4 no es exacto (4 no \"cabe\" en 10)" },
+  { n: 7, text: "Los factores de un número son infinitos", answer: false,
+    justification: "Los factores son FINITOS (los múltiplos son infinitos)" },
+  { n: 8, text: "El 17 es primo", answer: true,
+    justification: "Solo tiene factores 1 y 17" },
+];
+
+const TIMER_SECONDS = 10;
+const MAX_POINTS = 100;
+const MIN_POINTS = 10;
+
+const state = {
+  score: 0,
+  answered: new Map(), // idx -> { correct: bool, points: number }
+  activeIdx: null,
+  timeLeft: TIMER_SECONDS,
+  timerInterval: null,
+};
+
+// === DOM ===
+const board = document.getElementById('board');
+const scoreValue = document.getElementById('scoreValue');
+const modalOverlay = document.getElementById('modalOverlay');
+const modalNumber = document.getElementById('modalNumber');
+const modalAffirmation = document.getElementById('modalAffirmation');
+const timerText = document.getElementById('timerText');
+const timerProgress = document.getElementById('timerProgress');
+const timerRing = document.getElementById('timerRing');
+const timerPoints = document.getElementById('timerPoints');
+const btnV = document.getElementById('btnV');
+const btnF = document.getElementById('btnF');
+const tensionScreen = document.getElementById('tensionScreen');
+const resultScreen = document.getElementById('resultScreen');
+const resultIcon = document.getElementById('resultIcon');
+const resultTitle = document.getElementById('resultTitle');
+const resultPoints = document.getElementById('resultPoints');
+const correctionLabel = document.getElementById('correctionLabel');
+const correctionText = document.getElementById('correctionText');
+const btnContinue = document.getElementById('btnContinue');
+const resetBtn = document.getElementById('resetBtn');
+
+// === Render tablero ===
+function renderBoard() {
+  board.innerHTML = '';
+  QUESTIONS.forEach((q, idx) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    const answered = state.answered.get(idx);
+    if (answered) card.classList.add('answered');
+
+    const back = document.createElement('div');
+    back.className = 'card-face card-back';
+    back.innerHTML = `
+      <div class="card-number">${q.n}</div>
+      <div class="card-back-label">Carta</div>
+    `;
+
+    const front = document.createElement('div');
+    front.className = 'card-face card-front';
+    front.textContent = q.text;
+    if (answered) {
+      const badge = document.createElement('div');
+      badge.className = 'card-status-badge ' + (answered.correct ? 'correct' : 'incorrect');
+      badge.textContent = answered.correct ? '✓' : '✗';
+      front.appendChild(badge);
+    }
+
+    card.appendChild(back);
+    card.appendChild(front);
+
+    card.addEventListener('click', () => {
+      if (answered) return;
+      card.classList.add('flipped');
+      setTimeout(() => openQuestion(idx), 600);
+    });
+
+    board.appendChild(card);
+  });
+  scoreValue.textContent = state.score;
+}
+
+// === Cronómetro ===
+function pointsForTime(timeLeft) {
+  // Linear: 10s = 100pts, 0s = 10pts
+  const ratio = timeLeft / TIMER_SECONDS;
+  return Math.max(MIN_POINTS, Math.round(MIN_POINTS + (MAX_POINTS - MIN_POINTS) * ratio));
+}
+
+function startTimer() {
+  state.timeLeft = TIMER_SECONDS;
+  timerText.textContent = TIMER_SECONDS;
+  timerProgress.setAttribute('stroke-dashoffset', '0');
+  timerRing.classList.remove('warn');
+  timerPoints.textContent = MAX_POINTS + ' pts';
+
+  const circumference = 276.46;
+  const startTime = Date.now();
+
+  state.timerInterval = setInterval(() => {
+    const elapsed = (Date.now() - startTime) / 1000;
+    state.timeLeft = Math.max(0, TIMER_SECONDS - elapsed);
+    
+    const displayTime = Math.ceil(state.timeLeft);
+    timerText.textContent = displayTime;
+    
+    const ratio = state.timeLeft / TIMER_SECONDS;
+    const offset = circumference * (1 - ratio);
+    timerProgress.setAttribute('stroke-dashoffset', offset);
+    
+    const pts = pointsForTime(state.timeLeft);
+    timerPoints.textContent = pts + ' pts';
+    
+    if (state.timeLeft <= 3) timerRing.classList.add('warn');
+    
+    if (state.timeLeft <= 0) {
+      clearInterval(state.timerInterval);
+      // Tiempo agotado: no bloqueamos los botones, solo dejamos de sumar más puntos
+    }
+  }, 80);
+}
+
+function stopTimer() {
+  if (state.timerInterval) {
+    clearInterval(state.timerInterval);
+    state.timerInterval = null;
+  }
+}
+
+// === Apertura de pregunta ===
+function openQuestion(idx) {
+  state.activeIdx = idx;
+  const q = QUESTIONS[idx];
+  modalNumber.textContent = '# ' + q.n;
+  modalAffirmation.textContent = q.text;
+  btnV.disabled = false;
+  btnF.disabled = false;
+  modalOverlay.classList.add('show');
+  startTimer();
+  playSound('open');
+}
+
+// === Responder ===
+function answer(chosen) {
+  if (state.activeIdx === null) return;
+  const q = QUESTIONS[state.activeIdx];
+  const correct = (chosen === q.answer);
+  const earned = correct ? pointsForTime(state.timeLeft) : 0;
+  
+  stopTimer();
+  btnV.disabled = true;
+  btnF.disabled = true;
+  
+  modalOverlay.classList.remove('show');
+  tensionScreen.classList.add('show');
+  playSound('tension');
+  
+  setTimeout(() => {
+    tensionScreen.classList.remove('show');
+    showResult(correct, earned, q);
+  }, 1500);
+}
+
+btnV.addEventListener('click', () => answer(true));
+btnF.addEventListener('click', () => answer(false));
+
+// === Mostrar resultado ===
+function showResult(correct, earned, q) {
+  resultScreen.classList.remove('correct', 'incorrect');
+  resultScreen.classList.add(correct ? 'correct' : 'incorrect');
+  
+  resultIcon.textContent = correct ? '🎉' : '💔';
+  resultTitle.textContent = correct ? '¡Correcto!' : 'Incorrecto';
+  resultTitle.className = 'result-title ' + (correct ? 'ok' : 'err');
+  resultPoints.textContent = correct ? `+${earned} puntos` : '+0 puntos';
+  
+  correctionLabel.textContent = correct ? 'Justificación' : 'Corrección';
+  let text = q.justification;
+  if (!correct) {
+    // Agregar la respuesta correcta explícitamente
+    text = `La afirmación era ${q.answer ? 'VERDADERA' : 'FALSA'}. ${q.justification}`;
+  }
+  correctionText.textContent = text;
+  
+  resultScreen.classList.add('show');
+  
+  if (correct) {
+    playSound('correct');
+    launchConfetti();
+  } else {
+    playSound('incorrect');
+  }
+  
+  // Guardar estado
+  state.answered.set(state.activeIdx, { correct, points: earned });
+  state.score += earned;
+}
+
+btnContinue.addEventListener('click', () => {
+  resultScreen.classList.remove('show');
+  state.activeIdx = null;
+  renderBoard();
+  
+  // Chequear si todas están respondidas
+  if (state.answered.size === QUESTIONS.length) {
+    setTimeout(showFinalScreen, 500);
+  }
+});
+
+// === Pantalla final ===
+function showFinalScreen() {
+  const correct = Array.from(state.answered.values()).filter(r => r.correct).length;
+  const incorrect = QUESTIONS.length - correct;
+  
+  const html = `
+    <div class="result-content final-screen">
+      <div class="result-icon">🏆</div>
+      <div class="result-title ok">¡Juego completo!</div>
+      <div class="final-score">${state.score} pts</div>
+      <div class="final-stats">
+        <div class="stat-item">
+          <div class="stat-num" style="color: var(--v-color);">${correct}</div>
+          <div class="stat-label">Aciertos</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num" style="color: var(--f-color);">${incorrect}</div>
+          <div class="stat-label">Errores</div>
+        </div>
+      </div>
+      <button class="btn-continue" id="btnRestart">Jugar de nuevo</button>
+    </div>
+  `;
+  
+  resultScreen.innerHTML = html;
+  resultScreen.classList.remove('correct', 'incorrect');
+  resultScreen.style.background = 'radial-gradient(circle, rgba(251, 191, 36, 0.95), rgba(146, 64, 14, 0.98))';
+  resultScreen.classList.add('show');
+  
+  document.getElementById('btnRestart').addEventListener('click', () => {
+    resetGame();
+  });
+  
+  playSound('victory');
+  launchConfetti(true);
+}
+
+// === Reset ===
+function resetGame() {
+  state.score = 0;
+  state.answered.clear();
+  state.activeIdx = null;
+  resultScreen.classList.remove('show');
+  resultScreen.style.background = '';
+  
+  // Restaurar el HTML original de resultScreen
+  resultScreen.innerHTML = `
+    <div class="result-content">
+      <div class="result-icon" id="resultIcon">✓</div>
+      <div class="result-title" id="resultTitle">¡Correcto!</div>
+      <div class="result-points" id="resultPoints">+100 puntos</div>
+      <div class="result-correction">
+        <div class="result-correction-label" id="correctionLabel">Justificación</div>
+        <div class="result-correction-text" id="correctionText">...</div>
+      </div>
+      <button class="btn-continue" id="btnContinue">Continuar</button>
+    </div>
+  `;
+  // Re-asignar listeners
+  document.getElementById('btnContinue').addEventListener('click', () => {
+    resultScreen.classList.remove('show');
+    state.activeIdx = null;
+    renderBoard();
+    if (state.answered.size === QUESTIONS.length) {
+      setTimeout(showFinalScreen, 500);
+    }
+  });
+  
+  renderBoard();
+}
+
+resetBtn.addEventListener('click', () => {
+  if (state.answered.size > 0) {
+    if (confirm('¿Reiniciar el juego? Se perderá el puntaje actual.')) {
+      resetGame();
+    }
+  }
+});
+
+// === Sonidos ===
+function playSound(type) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (type === 'open') {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.setValueAtTime(400, ctx.currentTime);
+      o.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.15);
+      o.type = 'sine';
+      g.gain.setValueAtTime(0.15, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+      o.start();
+      o.stop(ctx.currentTime + 0.2);
+    } else if (type === 'tension') {
+      // Tic-tac rápido dramático
+      for (let i = 0; i < 4; i++) {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.frequency.value = 150 + i * 30;
+        o.type = 'square';
+        g.gain.setValueAtTime(0.1, ctx.currentTime + i * 0.3);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.3 + 0.1);
+        o.start(ctx.currentTime + i * 0.3);
+        o.stop(ctx.currentTime + i * 0.3 + 0.1);
+      }
+    } else if (type === 'correct') {
+      [523, 659, 784, 1047].forEach((f, i) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.frequency.value = f;
+        o.type = 'sine';
+        g.gain.setValueAtTime(0.2, ctx.currentTime + i * 0.08);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.08 + 0.3);
+        o.start(ctx.currentTime + i * 0.08);
+        o.stop(ctx.currentTime + i * 0.08 + 0.3);
+      });
+    } else if (type === 'incorrect') {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.setValueAtTime(350, ctx.currentTime);
+      o.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.4);
+      o.type = 'sawtooth';
+      g.gain.setValueAtTime(0.15, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+      o.start();
+      o.stop(ctx.currentTime + 0.5);
+    } else if (type === 'victory') {
+      [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.frequency.value = f;
+        o.type = 'sine';
+        g.gain.setValueAtTime(0.22, ctx.currentTime + i * 0.12);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.12 + 0.4);
+        o.start(ctx.currentTime + i * 0.12);
+        o.stop(ctx.currentTime + i * 0.12 + 0.4);
+      });
+    }
+  } catch(e) {}
+}
+
+function launchConfetti(big = false) {
+  const colors = ['#f59e0b', '#10b981', '#7c3aed', '#fbbf24', '#ec4899', '#06b6d4'];
+  const amount = big ? 150 : 60;
+  for (let i = 0; i < amount; i++) {
+    setTimeout(() => {
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.left = Math.random() * 100 + 'vw';
+      c.style.top = '-20px';
+      c.style.background = colors[Math.floor(Math.random() * colors.length)];
+      c.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+      c.style.animation = `fall ${2 + Math.random() * 2}s linear forwards`;
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 5000);
+    }, i * 20);
+  }
+}
+
+// === Inicio ===
+renderBoard();
+</script>
+
+</body>
+</html>
