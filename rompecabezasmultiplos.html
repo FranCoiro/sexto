@@ -1,0 +1,1551 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Decodificador — Descomposición prima</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #fef6e8;
+    --surface: #ffffff;
+    --ink: #2a2a35;
+    --ink-soft: #6b6b7a;
+    --accent: #e63946;
+    --accent-soft: #fdd8dc;
+    --success: #2a9d8f;
+    --success-soft: #d6efec;
+    --border: #e8e2d5;
+    --gold: #f2b93e;
+    --board-bg: #f4ecd8;
+  }
+
+  body {
+    font-family: 'Fredoka', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 20px;
+    overflow-x: hidden;
+  }
+
+  .app { max-width: 1500px; margin: 0 auto; }
+
+  .stage {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 24px;
+    align-items: start;
+  }
+
+  @media (max-width: 1100px) { .stage { grid-template-columns: 1fr; } }
+
+  .title-bar {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .title {
+    font-weight: 700;
+    font-size: 1.7rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .title-icon {
+    width: 44px;
+    height: 44px;
+    background: var(--accent);
+    color: white;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .icon-btn {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    width: 44px;
+    height: 44px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .icon-btn:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+
+  /* ===== Zona izquierda: Tablero + Bandeja ===== */
+  .play-area {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .board-wrap {
+    position: relative;
+  }
+
+  .board-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .board {
+    background: var(--board-bg);
+    border: 3px dashed var(--border);
+    border-radius: 20px;
+    aspect-ratio: 1;
+    position: relative;
+    overflow: visible;
+  }
+
+  .board.complete {
+    border-style: solid;
+    border-color: var(--success);
+    animation: glow 2s ease-in-out;
+  }
+
+  @keyframes glow {
+    0%, 100% { box-shadow: 0 0 0 rgba(42, 157, 143, 0); }
+    50% { box-shadow: 0 0 40px rgba(42, 157, 143, 0.4); }
+  }
+
+  .board-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink-soft);
+    font-size: 1rem;
+    text-align: center;
+    padding: 2rem;
+    pointer-events: none;
+    opacity: 0.5;
+  }
+
+  .tray-wrap {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 20px;
+    padding: 16px;
+    min-height: 140px;
+  }
+
+  .tray-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+  }
+
+  .tray {
+    position: relative;
+    min-height: 110px;
+  }
+
+  /* ===== Piezas ===== */
+  .piece {
+    position: absolute;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                top 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                filter 0.2s;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+  }
+
+  .piece.dragging {
+    cursor: grabbing;
+    transition: none;
+    filter: drop-shadow(0 8px 16px rgba(0,0,0,0.25));
+    z-index: 1000;
+  }
+
+  .piece.placed {
+    cursor: default;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.08));
+  }
+
+  .piece.locked {
+    pointer-events: none;
+  }
+
+  .piece.entering {
+    animation: piecePopIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes piecePopIn {
+    0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+  }
+
+  /* ===== Panel docente ===== */
+  .panel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .panel-header {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .num-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    gap: 8px;
+  }
+
+  .num-btn {
+    background: var(--surface);
+    border: 3px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: var(--ink);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .num-btn:hover:not(.done) {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  .num-btn.active {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .num-btn.done {
+    background: var(--success-soft);
+    border-color: var(--success);
+    color: var(--success);
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  .decode-panel {
+    background: var(--surface);
+    border: 3px solid var(--accent);
+    border-radius: 18px;
+    padding: 20px;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .decode-title {
+    text-align: center;
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    margin-bottom: 4px;
+  }
+
+  .decode-number {
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 2.6rem;
+    color: var(--accent);
+    margin-bottom: 14px;
+    line-height: 1;
+  }
+
+  .code-input-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+
+  .code-cell {
+    width: 52px;
+    height: 62px;
+    border: 3px solid var(--border);
+    border-radius: 12px;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 1.8rem;
+    color: var(--ink);
+    background: var(--bg);
+    transition: all 0.15s;
+    -moz-appearance: textfield;
+  }
+
+  .code-cell::-webkit-outer-spin-button,
+  .code-cell::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .code-cell:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .code-cell.error {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  .code-sep {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.3rem;
+    color: var(--ink-soft);
+    font-weight: 700;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 18px;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    width: 100%;
+  }
+
+  .btn-primary:hover {
+    background: #c92a37;
+    transform: translateY(-1px);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--ink-soft);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-family: inherit;
+    font-weight: 500;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .feedback {
+    text-align: center;
+    margin-top: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    min-height: 20px;
+  }
+
+  .feedback.ok { color: var(--success); }
+  .feedback.err { color: var(--accent); }
+
+  .victory-text {
+    text-align: center;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--success);
+    margin-top: 12px;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+  }
+
+  .victory-text.show { opacity: 1; }
+
+  /* ===== Modal configuración ===== */
+  .config-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(42, 42, 53, 0.6);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 100;
+  }
+
+  .config-overlay.show { display: flex; }
+
+  .config-modal {
+    background: var(--surface);
+    border-radius: 24px;
+    padding: 28px;
+    max-width: 680px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .config-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .config-subtitle {
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+    margin-bottom: 20px;
+  }
+
+  .config-section {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .config-section:last-of-type { border-bottom: none; }
+
+  .section-label {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .number-inputs {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+  }
+
+  @media (max-width: 600px) { .number-inputs { grid-template-columns: repeat(3, 1fr); } }
+
+  .num-input-wrap { display: flex; flex-direction: column; gap: 4px; }
+
+  .num-label { font-size: 0.75rem; color: var(--ink-soft); text-align: center; }
+
+  .num-input {
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 1.1rem;
+    text-align: center;
+    -moz-appearance: textfield;
+  }
+
+  .num-input::-webkit-outer-spin-button,
+  .num-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .num-input:focus { outline: none; border-color: var(--accent); }
+  .num-input.invalid { border-color: var(--accent); background: var(--accent-soft); }
+
+  .preview-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--ink-soft);
+    text-align: center;
+    min-height: 14px;
+  }
+
+  .preview-code.valid { color: var(--success); }
+  .preview-code.invalid { color: var(--accent); }
+
+  .count-control { display: flex; align-items: center; gap: 10px; }
+
+  .count-btn {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    width: 34px;
+    height: 34px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .count-btn:hover { border-color: var(--accent); }
+
+  .count-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 1.1rem;
+    min-width: 28px;
+    text-align: center;
+  }
+
+  .grid-info {
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+    margin-top: 4px;
+  }
+
+  .upload-area {
+    border: 2px dashed var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .upload-area:hover {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  .upload-area.has-image {
+    border-style: solid;
+    border-color: var(--success);
+    background: var(--success-soft);
+  }
+
+  .upload-icon { font-size: 2rem; margin-bottom: 6px; }
+
+  .config-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .mini-preview {
+    max-width: 100px;
+    max-height: 100px;
+    border-radius: 8px;
+    margin-top: 10px;
+  }
+
+  .confetti {
+    position: fixed;
+    width: 12px;
+    height: 12px;
+    pointer-events: none;
+    z-index: 200;
+  }
+
+  @keyframes fall {
+    to { transform: translateY(120vh) rotate(720deg); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="stage">
+
+    <div class="title-bar">
+      <div class="title">
+        <div class="title-icon">?</div>
+        <div>Arma el rompecabezas</div>
+      </div>
+      <button class="icon-btn" id="configBtn" title="Configuración">⚙</button>
+    </div>
+
+    <div class="play-area">
+      <div class="board-wrap">
+        <div class="board-label">Tablero — aquí armamos</div>
+        <div class="board" id="board">
+          <div class="board-placeholder" id="boardPlaceholder">
+            Cada clave descifrada libera una pieza.<br>Arrástrala aquí.
+          </div>
+        </div>
+        <div class="victory-text" id="victoryText">¡Rompecabezas completo! 🎉</div>
+      </div>
+
+      <div class="tray-wrap">
+        <div class="tray-label">Piezas disponibles</div>
+        <div class="tray" id="tray"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">Panel docente</div>
+      <div class="num-grid" id="numGrid"></div>
+      <div id="decodeArea"></div>
+      <button class="btn-secondary" id="resetBtn">↻ Reiniciar ronda</button>
+    </div>
+
+  </div>
+</div>
+
+<div class="config-overlay" id="configOverlay">
+  <div class="config-modal">
+    <div class="config-title">
+      <span>Configuración</span>
+      <button class="icon-btn" id="closeConfigBtn">×</button>
+    </div>
+    <div class="config-subtitle">Los cambios se guardan automáticamente.</div>
+
+    <div class="config-section">
+      <div class="section-label">
+        <span>Cantidad de piezas</span>
+        <div class="count-control">
+          <button class="count-btn" id="countMinus">−</button>
+          <span class="count-value" id="countValue">6</span>
+          <button class="count-btn" id="countPlus">+</button>
+        </div>
+      </div>
+      <div class="grid-info" id="gridInfo">Grilla: 2 × 3</div>
+    </div>
+
+    <div class="config-section">
+      <div class="section-label">
+        <span>Números a decodificar</span>
+        <span style="font-size: 0.8rem; color: var(--ink-soft); font-weight: 400;">(compuestos, 4–9999)</span>
+      </div>
+      <div class="number-inputs" id="numberInputs"></div>
+    </div>
+
+    <div class="config-section">
+      <div class="section-label"><span>Imagen del rompecabezas</span></div>
+      <div class="upload-area" id="uploadArea">
+        <div class="upload-icon">🖼️</div>
+        <div id="uploadText">Haz clic para subir imagen</div>
+        <img class="mini-preview" id="miniPreview" style="display: none;" alt="" />
+      </div>
+      <input type="file" id="fileInput" accept="image/*" style="display: none;" />
+    </div>
+
+    <div class="config-section">
+      <div class="section-label"><span>Compartir configuración</span></div>
+      <div class="config-actions">
+        <button class="btn-secondary" id="exportBtn">📥 Exportar JSON</button>
+        <button class="btn-secondary" id="importBtn">📤 Importar JSON</button>
+        <button class="btn-secondary" id="clearBtn" style="color: var(--accent); border-color: var(--accent);">🗑 Borrar todo</button>
+      </div>
+      <input type="file" id="importInput" accept=".json,application/json" style="display: none;" />
+    </div>
+
+    <button class="btn-primary" id="applyBtn">Aplicar y cerrar</button>
+  </div>
+</div>
+
+<script>
+// ===== Utilidades matemáticas =====
+function factorize(n) {
+  const factors = [];
+  let x = n;
+  for (let p = 2; p * p <= x; p++) {
+    while (x % p === 0) {
+      factors.push(p);
+      x = Math.floor(x / p);
+    }
+  }
+  if (x > 1) factors.push(x);
+  return factors;
+}
+
+function isComposite(n) {
+  if (n < 2) return false;
+  return factorize(n).length >= 2;
+}
+
+// ===== Cálculo de grilla a partir de cantidad =====
+// Dado N piezas, retorna [rows, cols] lo más cuadrado posible
+function getGrid(n) {
+  if (n <= 1) return [1, 1];
+  if (n === 2) return [1, 2];
+  if (n === 3) return [1, 3];
+  if (n === 4) return [2, 2];
+  if (n === 5) return [1, 5];  // fila horizontal, para que se vea la imagen
+  if (n === 6) return [2, 3];
+  if (n === 7) return [1, 7];  // también fila
+  if (n === 8) return [2, 4];
+  if (n === 9) return [3, 3];
+  if (n === 10) return [2, 5];
+  return [Math.ceil(Math.sqrt(n)), Math.ceil(Math.sqrt(n))];
+}
+
+// ===== Generación de bordes del puzzle =====
+function generatePuzzleEdges(rows, cols, seed) {
+  // Seeded random con LCG simple
+  let s = seed;
+  function rand() {
+    s = (s * 1103515245 + 12345) & 0x7fffffff;
+    return s / 0x7fffffff;
+  }
+
+  const horizontal = Array.from({length: rows + 1}, () => new Array(cols).fill(0));
+  for (let r = 1; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      horizontal[r][c] = rand() > 0.5 ? 1 : -1;
+    }
+  }
+  const vertical = Array.from({length: rows}, () => new Array(cols + 1).fill(0));
+  for (let r = 0; r < rows; r++) {
+    for (let c = 1; c < cols; c++) {
+      vertical[r][c] = rand() > 0.5 ? 1 : -1;
+    }
+  }
+  return { horizontal, vertical };
+}
+
+function piecePath(row, col, pw, ph, edges, tabSize = 0.22) {
+  const tabH = ph * tabSize;
+  const tabW = pw * tabSize;
+  const top = edges.horizontal[row][col];
+  const bottom = edges.horizontal[row + 1][col];
+  const left = edges.vertical[row][col];
+  const right = edges.vertical[row][col + 1];
+  const path = ["M 0 0"];
+  
+  // Top edge
+  if (top === 0) {
+    path.push(`L ${pw} 0`);
+  } else {
+    const midX = pw / 2;
+    const dir = top === 1 ? -1 : 1;
+    path.push(`L ${midX - tabW/2} 0`);
+    const cpY = dir * tabH;
+    path.push(`C ${midX - tabW/2} ${cpY}, ${midX + tabW/2} ${cpY}, ${midX + tabW/2} 0`);
+    path.push(`L ${pw} 0`);
+  }
+  
+  // Right edge
+  if (right === 0) {
+    path.push(`L ${pw} ${ph}`);
+  } else {
+    const midY = ph / 2;
+    const dir = right === 1 ? 1 : -1;
+    path.push(`L ${pw} ${midY - tabH/2}`);
+    const cpX = pw + dir * tabW;
+    path.push(`C ${cpX} ${midY - tabH/2}, ${cpX} ${midY + tabH/2}, ${pw} ${midY + tabH/2}`);
+    path.push(`L ${pw} ${ph}`);
+  }
+  
+  // Bottom edge
+  if (bottom === 0) {
+    path.push(`L 0 ${ph}`);
+  } else {
+    const midX = pw / 2;
+    const dir = bottom === 1 ? 1 : -1;
+    path.push(`L ${midX + tabW/2} ${ph}`);
+    const cpY = ph + dir * tabH;
+    path.push(`C ${midX + tabW/2} ${cpY}, ${midX - tabW/2} ${cpY}, ${midX - tabW/2} ${ph}`);
+    path.push(`L 0 ${ph}`);
+  }
+  
+  // Left edge
+  if (left === 0) {
+    path.push(`L 0 0`);
+  } else {
+    const midY = ph / 2;
+    const dir = left === 1 ? -1 : 1;
+    path.push(`L 0 ${midY + tabH/2}`);
+    const cpX = dir * tabW;
+    path.push(`C ${cpX} ${midY + tabH/2}, ${cpX} ${midY - tabH/2}, 0 ${midY - tabH/2}`);
+    path.push(`L 0 0`);
+  }
+  
+  path.push("Z");
+  return path.join(" ");
+}
+
+// ===== Estado =====
+const DEFAULTS = {
+  count: 6,
+  numbers: [12, 18, 20, 24, 30, 45],
+  image: null
+};
+
+let state = loadState();
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem('decoder-puzzle-config');
+    if (raw) return { ...DEFAULTS, ...JSON.parse(raw) };
+  } catch(e) {}
+  return { ...DEFAULTS };
+}
+
+function saveState() {
+  try {
+    localStorage.setItem('decoder-puzzle-config', JSON.stringify(state));
+  } catch(e) { console.error('Save error:', e); }
+}
+
+// ===== DOM =====
+const board = document.getElementById('board');
+const boardPlaceholder = document.getElementById('boardPlaceholder');
+const tray = document.getElementById('tray');
+const numGrid = document.getElementById('numGrid');
+const decodeArea = document.getElementById('decodeArea');
+const resetBtn = document.getElementById('resetBtn');
+const configBtn = document.getElementById('configBtn');
+const configOverlay = document.getElementById('configOverlay');
+const closeConfigBtn = document.getElementById('closeConfigBtn');
+const countValue = document.getElementById('countValue');
+const gridInfo = document.getElementById('gridInfo');
+const countMinus = document.getElementById('countMinus');
+const countPlus = document.getElementById('countPlus');
+const numberInputs = document.getElementById('numberInputs');
+const uploadArea = document.getElementById('uploadArea');
+const uploadText = document.getElementById('uploadText');
+const miniPreview = document.getElementById('miniPreview');
+const fileInput = document.getElementById('fileInput');
+const exportBtn = document.getElementById('exportBtn');
+const importBtn = document.getElementById('importBtn');
+const importInput = document.getElementById('importInput');
+const clearBtn = document.getElementById('clearBtn');
+const applyBtn = document.getElementById('applyBtn');
+const victoryText = document.getElementById('victoryText');
+
+// ===== Estado de ronda =====
+let completed = new Set();       // índices de números ya decodificados
+let activeNum = null;            // número actualmente activo en el panel
+let pieces = [];                 // metadatos de piezas
+let puzzleGrid = { rows: 2, cols: 3 };
+let piecesPlaced = new Set();    // índices de piezas ya colocadas correctamente
+
+// ===== Preparación del rompecabezas =====
+function preparePuzzle() {
+  const n = state.numbers.length;
+  puzzleGrid = { rows: getGrid(n)[0], cols: getGrid(n)[1] };
+  const { rows, cols } = puzzleGrid;
+  
+  // Tamaño del tablero en píxeles (se ajusta al CSS, pero necesitamos referencia)
+  // Vamos a usar viewBox SVG, así que unidades internas
+  const boardSize = 600; // unidades SVG internas
+  const pieceW = boardSize / cols;
+  const pieceH = boardSize / rows;
+  
+  const edges = generatePuzzleEdges(rows, cols, 42 + n);
+  
+  pieces = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const idx = r * cols + c;
+      pieces.push({
+        idx,
+        row: r,
+        col: c,
+        path: piecePath(r, c, pieceW, pieceH, edges),
+        pieceW,
+        pieceH,
+        boardSize
+      });
+    }
+  }
+}
+
+// ===== Renderizado del panel principal =====
+function render() {
+  preparePuzzle();
+  renderBoard();
+  renderTray();
+  renderNumButtons();
+  renderDecode();
+  
+  const totalNums = state.numbers.length;
+  if (completed.size === totalNums && totalNums > 0 && piecesPlaced.size === pieces.length) {
+    victoryText.classList.add('show');
+    board.classList.add('complete');
+  } else {
+    victoryText.classList.remove('show');
+    board.classList.remove('complete');
+  }
+}
+
+function renderBoard() {
+  board.innerHTML = '<div class="board-placeholder" id="boardPlaceholder">Cada clave descifrada libera una pieza.<br>Arrástrala aquí.</div>';
+  
+  // Crear SVG base para las piezas colocadas
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const boardSvg = document.createElementNS(svgNS, 'svg');
+  boardSvg.setAttribute('id', 'boardSvg');
+  boardSvg.setAttribute('viewBox', `0 0 ${pieces[0]?.boardSize || 600} ${pieces[0]?.boardSize || 600}`);
+  boardSvg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  boardSvg.style.position = 'absolute';
+  boardSvg.style.inset = '0';
+  boardSvg.style.width = '100%';
+  boardSvg.style.height = '100%';
+  boardSvg.style.overflow = 'visible';
+  board.appendChild(boardSvg);
+  
+  // Si no hay piezas liberadas, mostrar placeholder
+  if (completed.size === 0) {
+    document.getElementById('boardPlaceholder').style.display = 'flex';
+  } else {
+    const ph = document.getElementById('boardPlaceholder');
+    if (ph) ph.style.display = 'none';
+  }
+}
+
+function renderTray() {
+  tray.innerHTML = '';
+  
+  // Para cada número decodificado, crear su pieza (si no está en el tablero)
+  for (const numIdx of completed) {
+    const pieceIdx = numIdx; // asumimos 1 número = 1 pieza con ese índice
+    if (pieceIdx >= pieces.length) continue;
+    if (piecesPlaced.has(pieceIdx)) continue;
+    
+    // Chequear si la pieza ya está renderizada (podría estarlo por haber sido colocada mal)
+    const existing = document.querySelector(`.piece[data-idx="${pieceIdx}"]`);
+    if (existing && existing.parentElement === tray) continue;
+    
+    createPieceElement(pieceIdx, 'tray', true);
+  }
+  
+  layoutTrayPieces();
+}
+
+function createPieceElement(pieceIdx, parent, isNew = false) {
+  const piece = pieces[pieceIdx];
+  if (!piece) return null;
+  
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.classList.add('piece');
+  if (isNew) svg.classList.add('entering');
+  svg.dataset.idx = pieceIdx;
+  
+  // Calcular bounding box de la pieza (puede exceder pw x ph por las lengüetas)
+  const tabOverflow = piece.pieceW * 0.22;
+  const viewBoxW = piece.pieceW + 2 * tabOverflow;
+  const viewBoxH = piece.pieceH + 2 * tabOverflow;
+  svg.setAttribute('viewBox', `${-tabOverflow} ${-tabOverflow} ${viewBoxW} ${viewBoxH}`);
+  
+  // Tamaño visual: dependerá del contexto
+  const trayPieceSize = 100; // px aprox
+  const scale = trayPieceSize / Math.max(piece.pieceW, piece.pieceH);
+  svg.style.width = `${viewBoxW * scale}px`;
+  svg.style.height = `${viewBoxH * scale}px`;
+  
+  // Path + clipPath para imagen
+  const clipId = `clip-${pieceIdx}-${Date.now()}`;
+  const defs = document.createElementNS(svgNS, 'defs');
+  const clipPath = document.createElementNS(svgNS, 'clipPath');
+  clipPath.setAttribute('id', clipId);
+  const clipShape = document.createElementNS(svgNS, 'path');
+  clipShape.setAttribute('d', piece.path);
+  clipPath.appendChild(clipShape);
+  defs.appendChild(clipPath);
+  svg.appendChild(defs);
+  
+  // Imagen (si existe) clipeada
+  if (state.image) {
+    const image = document.createElementNS(svgNS, 'image');
+    image.setAttribute('href', state.image);
+    // La imagen completa ocupa todo el tablero
+    const imgX = -piece.col * piece.pieceW;
+    const imgY = -piece.row * piece.pieceH;
+    image.setAttribute('x', imgX);
+    image.setAttribute('y', imgY);
+    image.setAttribute('width', piece.boardSize);
+    image.setAttribute('height', piece.boardSize);
+    image.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+    image.setAttribute('clip-path', `url(#${clipId})`);
+    svg.appendChild(image);
+  } else {
+    // Sin imagen: color sólido
+    const colors = ['#e63946', '#2a9d8f', '#f2b93e', '#457b9d', '#f4a261', '#a8dadc', '#e76f51', '#264653', '#e9c46a', '#8ab17d'];
+    const pathEl = document.createElementNS(svgNS, 'path');
+    pathEl.setAttribute('d', piece.path);
+    pathEl.setAttribute('fill', colors[pieceIdx % colors.length]);
+    svg.appendChild(pathEl);
+  }
+  
+  // Contorno
+  const outline = document.createElementNS(svgNS, 'path');
+  outline.setAttribute('d', piece.path);
+  outline.setAttribute('fill', 'none');
+  outline.setAttribute('stroke', 'rgba(0,0,0,0.35)');
+  outline.setAttribute('stroke-width', '2');
+  outline.setAttribute('vector-effect', 'non-scaling-stroke');
+  svg.appendChild(outline);
+  
+  // Posicionamiento absoluto
+  svg.style.position = 'absolute';
+  
+  if (parent === 'tray') {
+    tray.appendChild(svg);
+  } else {
+    board.appendChild(svg);
+  }
+  
+  // Drag listeners
+  attachDragHandlers(svg, pieceIdx);
+  
+  return svg;
+}
+
+function layoutTrayPieces() {
+  const trayPieces = Array.from(tray.querySelectorAll('.piece'));
+  if (trayPieces.length === 0) return;
+  
+  const trayRect = tray.getBoundingClientRect();
+  const gap = 10;
+  let x = 10;
+  let y = 10;
+  
+  trayPieces.forEach((svg, i) => {
+    const w = parseFloat(svg.style.width) || 120;
+    if (x + w > trayRect.width - 10) {
+      x = 10;
+      y += 120 + gap;
+    }
+    svg.style.left = `${x}px`;
+    svg.style.top = `${y}px`;
+    x += w + gap;
+  });
+}
+
+// ===== Drag & Drop =====
+function attachDragHandlers(el, pieceIdx) {
+  let isDragging = false;
+  let startX, startY, initialLeft, initialTop;
+  
+  function onPointerDown(e) {
+    if (el.classList.contains('locked')) return;
+    e.preventDefault();
+    isDragging = true;
+    el.classList.add('dragging');
+    const rect = el.getBoundingClientRect();
+    startX = e.clientX;
+    startY = e.clientY;
+    initialLeft = rect.left;
+    initialTop = rect.top;
+    
+    // Reparent al body para drag global (evita clipping por contenedor)
+    const parentRect = el.parentElement.getBoundingClientRect();
+    // Mover a document.body manteniendo posición visual
+    document.body.appendChild(el);
+    el.style.position = 'fixed';
+    el.style.left = `${rect.left}px`;
+    el.style.top = `${rect.top}px`;
+    el.style.zIndex = '1000';
+    
+    document.addEventListener('pointermove', onPointerMove);
+    document.addEventListener('pointerup', onPointerUp);
+  }
+  
+  function onPointerMove(e) {
+    if (!isDragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    el.style.left = `${initialLeft + dx}px`;
+    el.style.top = `${initialTop + dy}px`;
+  }
+  
+  function onPointerUp(e) {
+    if (!isDragging) return;
+    isDragging = false;
+    el.classList.remove('dragging');
+    document.removeEventListener('pointermove', onPointerMove);
+    document.removeEventListener('pointerup', onPointerUp);
+    
+    // Chequear si se soltó sobre el tablero
+    const boardRect = board.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+    const elCenterX = elRect.left + elRect.width / 2;
+    const elCenterY = elRect.top + elRect.height / 2;
+    
+    const piece = pieces[pieceIdx];
+    
+    if (elCenterX >= boardRect.left && elCenterX <= boardRect.right &&
+        elCenterY >= boardRect.top && elCenterY <= boardRect.bottom) {
+      // Calcular la posición correcta de esta pieza
+      const scale = boardRect.width / piece.boardSize;
+      const correctCenterX = boardRect.left + (piece.col * piece.pieceW + piece.pieceW / 2) * scale;
+      const correctCenterY = boardRect.top + (piece.row * piece.pieceH + piece.pieceH / 2) * scale;
+      
+      const distance = Math.hypot(elCenterX - correctCenterX, elCenterY - correctCenterY);
+      const snapThreshold = Math.min(piece.pieceW, piece.pieceH) * scale * 0.5;
+      
+      if (distance < snapThreshold) {
+        // Snap a la posición correcta
+        snapPieceToBoard(el, pieceIdx);
+      } else {
+        // Posición libre dentro del tablero (se queda donde se soltó pero mal puesta)
+        // Retornar a bandeja
+        returnToTray(el, pieceIdx);
+      }
+    } else {
+      // Fuera del tablero → volver a la bandeja
+      returnToTray(el, pieceIdx);
+    }
+  }
+  
+  el.addEventListener('pointerdown', onPointerDown);
+}
+
+function snapPieceToBoard(el, pieceIdx) {
+  const piece = pieces[pieceIdx];
+  const boardRect = board.getBoundingClientRect();
+  const scale = boardRect.width / piece.boardSize;
+  const tabOverflow = piece.pieceW * 0.22;
+  
+  // Posicionar la pieza relativa al board
+  el.style.position = 'absolute';
+  el.style.left = `${(piece.col * piece.pieceW - tabOverflow) * scale}px`;
+  el.style.top = `${(piece.row * piece.pieceH - tabOverflow) * scale}px`;
+  el.style.width = `${(piece.pieceW + 2 * tabOverflow) * scale}px`;
+  el.style.height = `${(piece.pieceH + 2 * tabOverflow) * scale}px`;
+  el.style.zIndex = '1';
+  
+  board.appendChild(el);
+  el.classList.add('placed', 'locked');
+  piecesPlaced.add(pieceIdx);
+  
+  const ph = document.getElementById('boardPlaceholder');
+  if (ph) ph.style.display = 'none';
+  
+  playSound('place');
+  
+  // Chequear victoria
+  const totalNums = state.numbers.length;
+  if (piecesPlaced.size === pieces.length && completed.size === totalNums) {
+    setTimeout(() => {
+      victoryText.classList.add('show');
+      board.classList.add('complete');
+      playSound('complete');
+      launchConfetti();
+    }, 500);
+  }
+}
+
+function returnToTray(el, pieceIdx) {
+  const piece = pieces[pieceIdx];
+  const trayPieceSize = 100;
+  const tabOverflow = piece.pieceW * 0.22;
+  const viewBoxW = piece.pieceW + 2 * tabOverflow;
+  const viewBoxH = piece.pieceH + 2 * tabOverflow;
+  const scale = trayPieceSize / Math.max(piece.pieceW, piece.pieceH);
+  
+  el.style.position = 'absolute';
+  el.style.width = `${viewBoxW * scale}px`;
+  el.style.height = `${viewBoxH * scale}px`;
+  el.style.zIndex = '';
+  tray.appendChild(el);
+  layoutTrayPieces();
+  playSound('drop');
+}
+
+// ===== Panel de decodificación =====
+function renderNumButtons() {
+  numGrid.innerHTML = '';
+  state.numbers.forEach((num, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'num-btn';
+    if (completed.has(idx)) btn.classList.add('done');
+    if (activeNum === idx) btn.classList.add('active');
+    btn.textContent = num;
+    btn.addEventListener('click', () => openDecode(idx));
+    numGrid.appendChild(btn);
+  });
+}
+
+function openDecode(idx) {
+  if (completed.has(idx)) return;
+  activeNum = idx;
+  renderNumButtons();
+  renderDecode();
+}
+
+function renderDecode() {
+  if (activeNum === null) {
+    decodeArea.innerHTML = '';
+    return;
+  }
+  const num = state.numbers[activeNum];
+  const factors = factorize(num);
+  const cellCount = factors.length;
+  
+  let cellsHtml = '';
+  for (let i = 0; i < cellCount; i++) {
+    cellsHtml += `<input type="number" class="code-cell" min="2" max="99" inputmode="numeric" data-idx="${i}" />`;
+    if (i < cellCount - 1) cellsHtml += '<span class="code-sep">·</span>';
+  }
+  
+  decodeArea.innerHTML = `
+    <div class="decode-panel">
+      <div class="decode-title">Descomponer</div>
+      <div class="decode-number">${num}</div>
+      <div class="code-input-row">${cellsHtml}</div>
+      <button class="btn-primary" id="checkBtn">Verificar</button>
+      <div class="feedback" id="feedback"></div>
+    </div>
+  `;
+  
+  const cells = decodeArea.querySelectorAll('.code-cell');
+  cells.forEach((cell, i) => {
+    cell.addEventListener('input', (e) => {
+      if (e.target.value.length >= 2 && i < cells.length - 1) cells[i + 1].focus();
+    });
+    cell.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !e.target.value && i > 0) cells[i - 1].focus();
+      if (e.key === 'Enter') checkCode();
+    });
+  });
+  if (cells.length > 0) cells[0].focus();
+  
+  document.getElementById('checkBtn').addEventListener('click', checkCode);
+}
+
+function checkCode() {
+  const cells = decodeArea.querySelectorAll('.code-cell');
+  const feedback = document.getElementById('feedback');
+  const entered = Array.from(cells).map(c => parseInt(c.value, 10)).filter(v => !isNaN(v));
+  const num = state.numbers[activeNum];
+  const expected = factorize(num).sort((a,b) => a-b);
+  
+  if (entered.length !== expected.length) {
+    feedback.textContent = `Completa los ${expected.length} casilleros`;
+    feedback.className = 'feedback err';
+    return;
+  }
+  
+  const actual = [...entered].sort((a,b) => a-b);
+  const correct = expected.every((v, i) => v === actual[i]);
+  
+  if (correct) {
+    const idxCompleted = activeNum;
+    completed.add(idxCompleted);
+    feedback.textContent = '¡Correcto! Pieza liberada ✓';
+    feedback.className = 'feedback ok';
+    playSound('success');
+    
+    // Crear la pieza en la bandeja
+    setTimeout(() => {
+      createPieceElement(idxCompleted, 'tray', true);
+      layoutTrayPieces();
+    }, 300);
+    
+    setTimeout(() => {
+      activeNum = null;
+      renderNumButtons();
+      renderDecode();
+    }, 1100);
+  } else {
+    feedback.textContent = 'Incorrecto. Revisa la descomposición.';
+    feedback.className = 'feedback err';
+    cells.forEach(c => c.classList.add('error'));
+    playSound('error');
+    setTimeout(() => cells.forEach(c => c.classList.remove('error')), 500);
+  }
+}
+
+// ===== Sonidos =====
+function playSound(type) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (type === 'success') {
+      [523, 659, 784].forEach((f, i) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.frequency.value = f;
+        o.type = 'sine';
+        g.gain.setValueAtTime(0.18, ctx.currentTime + i * 0.07);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.07 + 0.22);
+        o.start(ctx.currentTime + i * 0.07);
+        o.stop(ctx.currentTime + i * 0.07 + 0.22);
+      });
+    } else if (type === 'error') {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.setValueAtTime(220, ctx.currentTime);
+      o.frequency.exponentialRampToValueAtTime(110, ctx.currentTime + 0.2);
+      o.type = 'square';
+      g.gain.setValueAtTime(0.12, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+      o.start();
+      o.stop(ctx.currentTime + 0.25);
+    } else if (type === 'place') {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.setValueAtTime(800, ctx.currentTime);
+      o.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
+      o.type = 'sine';
+      g.gain.setValueAtTime(0.15, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+      o.start();
+      o.stop(ctx.currentTime + 0.15);
+    } else if (type === 'drop') {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = 300;
+      o.type = 'sine';
+      g.gain.setValueAtTime(0.1, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+      o.start();
+      o.stop(ctx.currentTime + 0.1);
+    } else if (type === 'complete') {
+      [523, 659, 784, 1047, 1319].forEach((f, i) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.frequency.value = f;
+        o.type = 'sine';
+        g.gain.setValueAtTime(0.2, ctx.currentTime + i * 0.1);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.1 + 0.3);
+        o.start(ctx.currentTime + i * 0.1);
+        o.stop(ctx.currentTime + i * 0.1 + 0.3);
+      });
+    }
+  } catch(e) {}
+}
+
+function launchConfetti() {
+  const colors = ['#e63946', '#f2b93e', '#2a9d8f', '#f4a261', '#fdd8dc'];
+  for (let i = 0; i < 80; i++) {
+    setTimeout(() => {
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.left = Math.random() * 100 + 'vw';
+      c.style.top = '-20px';
+      c.style.background = colors[Math.floor(Math.random() * colors.length)];
+      c.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+      c.style.animation = `fall ${2 + Math.random() * 2}s linear forwards`;
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 5000);
+    }, i * 25);
+  }
+}
+
+// ===== Configuración =====
+function renderConfig() {
+  countValue.textContent = state.count;
+  const [r, c] = getGrid(state.count);
+  gridInfo.textContent = `Grilla: ${r} × ${c}`;
+  
+  numberInputs.innerHTML = '';
+  for (let i = 0; i < state.count; i++) {
+    const wrap = document.createElement('div');
+    wrap.className = 'num-input-wrap';
+    const num = state.numbers[i] ?? '';
+    wrap.innerHTML = `
+      <div class="num-label">N° ${i + 1}</div>
+      <input type="number" class="num-input" data-idx="${i}" value="${num}" min="4" max="9999" />
+      <div class="preview-code" data-idx="${i}"></div>
+    `;
+    numberInputs.appendChild(wrap);
+  }
+  numberInputs.querySelectorAll('.num-input').forEach(inp => {
+    inp.addEventListener('input', onNumInputChange);
+    updatePreview(inp);
+  });
+  
+  if (state.image) {
+    uploadArea.classList.add('has-image');
+    uploadText.textContent = 'Imagen cargada (clic para cambiar)';
+    miniPreview.src = state.image;
+    miniPreview.style.display = 'inline-block';
+  } else {
+    uploadArea.classList.remove('has-image');
+    uploadText.textContent = 'Haz clic para subir imagen';
+    miniPreview.style.display = 'none';
+  }
+}
+
+function onNumInputChange(e) {
+  const idx = parseInt(e.target.dataset.idx, 10);
+  const val = parseInt(e.target.value, 10);
+  state.numbers[idx] = isNaN(val) ? null : val;
+  updatePreview(e.target);
+  saveState();
+}
+
+function updatePreview(input) {
+  const val = parseInt(input.value, 10);
+  const preview = input.parentElement.querySelector('.preview-code');
+  if (isNaN(val) || val < 2) {
+    preview.textContent = '—';
+    preview.className = 'preview-code';
+    input.classList.remove('invalid');
+    return;
+  }
+  if (!isComposite(val)) {
+    preview.textContent = 'debe ser compuesto';
+    preview.className = 'preview-code invalid';
+    input.classList.add('invalid');
+    return;
+  }
+  preview.textContent = factorize(val).join(' · ');
+  preview.className = 'preview-code valid';
+  input.classList.remove('invalid');
+}
+
+countMinus.addEventListener('click', () => {
+  if (state.count > 1) {
+    state.count--;
+    state.numbers = state.numbers.slice(0, state.count);
+    saveState();
+    renderConfig();
+  }
+});
+countPlus.addEventListener('click', () => {
+  if (state.count < 10) {
+    state.count++;
+    if (state.numbers.length < state.count) state.numbers.push(12);
+    saveState();
+    renderConfig();
+  }
+});
+
+uploadArea.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    state.image = ev.target.result;
+    saveState();
+    renderConfig();
+  };
+  reader.readAsDataURL(file);
+});
+
+exportBtn.addEventListener('click', () => {
+  const exportData = { count: state.count, numbers: state.numbers, image: state.image };
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'decodificador-puzzle-config.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+importBtn.addEventListener('click', () => importInput.click());
+importInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (data.count && Array.isArray(data.numbers)) {
+        state.count = Math.max(1, Math.min(10, data.count));
+        state.numbers = data.numbers.slice(0, state.count);
+        if (data.image) state.image = data.image;
+        saveState();
+        renderConfig();
+        alert('Configuración importada correctamente.');
+      }
+    } catch(err) {
+      alert('Error al leer el archivo JSON.');
+    }
+  };
+  reader.readAsText(file);
+});
+
+clearBtn.addEventListener('click', () => {
+  if (confirm('¿Borrar toda la configuración? Esto no se puede deshacer.')) {
+    localStorage.removeItem('decoder-puzzle-config');
+    state = JSON.parse(JSON.stringify(DEFAULTS));
+    completed.clear();
+    piecesPlaced.clear();
+    activeNum = null;
+    saveState();
+    renderConfig();
+    render();
+  }
+});
+
+resetBtn.addEventListener('click', () => {
+  completed.clear();
+  piecesPlaced.clear();
+  activeNum = null;
+  render();
+});
+
+configBtn.addEventListener('click', () => {
+  renderConfig();
+  configOverlay.classList.add('show');
+});
+closeConfigBtn.addEventListener('click', () => configOverlay.classList.remove('show'));
+applyBtn.addEventListener('click', () => {
+  state.numbers = state.numbers.map(n => {
+    const v = parseInt(n, 10);
+    return (!isNaN(v) && isComposite(v)) ? v : null;
+  }).filter(n => n !== null);
+  state.count = state.numbers.length || 1;
+  if (state.numbers.length === 0) state.numbers = [12];
+  saveState();
+  completed.clear();
+  piecesPlaced.clear();
+  activeNum = null;
+  configOverlay.classList.remove('show');
+  render();
+});
+
+configOverlay.addEventListener('click', (e) => {
+  if (e.target === configOverlay) configOverlay.classList.remove('show');
+});
+
+// Re-layout al cambiar tamaño ventana
+window.addEventListener('resize', () => {
+  layoutTrayPieces();
+  // Re-posicionar piezas colocadas
+  document.querySelectorAll('.piece.locked').forEach(el => {
+    const idx = parseInt(el.dataset.idx, 10);
+    if (pieces[idx]) {
+      const piece = pieces[idx];
+      const boardRect = board.getBoundingClientRect();
+      const scale = boardRect.width / piece.boardSize;
+      const tabOverflow = piece.pieceW * 0.22;
+      el.style.left = `${(piece.col * piece.pieceW - tabOverflow) * scale}px`;
+      el.style.top = `${(piece.row * piece.pieceH - tabOverflow) * scale}px`;
+      el.style.width = `${(piece.pieceW + 2 * tabOverflow) * scale}px`;
+      el.style.height = `${(piece.pieceH + 2 * tabOverflow) * scale}px`;
+    }
+  });
+});
+
+// Inicio
+render();
+</script>
+
+</body>
+</html>
