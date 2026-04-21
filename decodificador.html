@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Decodificador — Descomposición prima</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #fef6e8;
+    --surface: #ffffff;
+    --ink: #2a2a35;
+    --ink-soft: #6b6b7a;
+    --accent: #e63946;
+    --accent-soft: #fdd8dc;
+    --success: #2a9d8f;
+    --success-soft: #d6efec;
+    --warning: #f4a261;
+    --border: #e8e2d5;
+    --gold: #f2b93e;
+  }
+
+  body {
+    font-family: 'Fredoka', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 24px;
+    overflow-x: hidden;
+  }
+
+  .app {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* ============== VISTA PRESENTACIÓN ============== */
+  .stage {
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    gap: 32px;
+    align-items: start;
+  }
+
+  @media (max-width: 1000px) {
+    .stage { grid-template-columns: 1fr; }
+  }
+
+  .title-bar {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .title {
+    font-weight: 700;
+    font-size: 1.8rem;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .title-icon {
+    width: 44px;
+    height: 44px;
+    background: var(--accent);
+    color: white;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .icon-btn {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    width: 44px;
+    height: 44px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .icon-btn:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+
+  /* ===== Imagen ===== */
+  .image-frame {
+    background: var(--surface);
+    border: 3px solid var(--border);
+    border-radius: 24px;
+    padding: 24px;
+    position: relative;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .image-frame.shake {
+    animation: shake 0.4s;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px) rotate(-1deg); }
+    60% { transform: translateX(8px) rotate(1deg); }
+    80% { transform: translateX(-4px); }
+  }
+
+  .placeholder {
+    text-align: center;
+    color: var(--ink-soft);
+    padding: 40px;
+  }
+
+  .placeholder-icon {
+    font-size: 4rem;
+    margin-bottom: 16px;
+    opacity: 0.3;
+  }
+
+  .placeholder-text {
+    font-size: 1.1rem;
+    font-weight: 500;
+  }
+
+  #pokemonImg {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    transition: filter 1.4s cubic-bezier(0.4, 0, 0.2, 1);
+    display: none;
+  }
+
+  .reveal-text {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--success);
+    opacity: 0;
+    transform: translateY(12px);
+    transition: all 0.6s ease;
+    min-height: 50px;
+  }
+
+  .reveal-text.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ===== Puntos de progreso ===== */
+  .progress-dots {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 18px;
+    flex-wrap: wrap;
+  }
+
+  .prog-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: all 0.4s ease;
+  }
+
+  .prog-dot.filled {
+    background: var(--success);
+    transform: scale(1.2);
+  }
+
+  /* ===== Panel docente ===== */
+  .panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .panel-header {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .num-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 10px;
+  }
+
+  .num-btn {
+    background: var(--surface);
+    border: 3px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 1.4rem;
+    color: var(--ink);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .num-btn:hover:not(.done) {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  .num-btn.active {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .num-btn.done {
+    background: var(--success-soft);
+    border-color: var(--success);
+    color: var(--success);
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  /* ===== Panel decodificación ===== */
+  .decode-panel {
+    background: var(--surface);
+    border: 3px solid var(--accent);
+    border-radius: 20px;
+    padding: 24px;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .decode-title {
+    text-align: center;
+    font-size: 1rem;
+    color: var(--ink-soft);
+    margin-bottom: 4px;
+  }
+
+  .decode-number {
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 3rem;
+    color: var(--accent);
+    margin-bottom: 18px;
+    line-height: 1;
+  }
+
+  .code-input-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+
+  .code-cell {
+    width: 64px;
+    height: 76px;
+    border: 3px solid var(--border);
+    border-radius: 14px;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 2.2rem;
+    color: var(--ink);
+    background: var(--bg);
+    transition: all 0.15s;
+    -moz-appearance: textfield;
+  }
+
+  .code-cell::-webkit-outer-spin-button,
+  .code-cell::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .code-cell:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .code-cell.error {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    animation: wiggle 0.3s;
+  }
+
+  @keyframes wiggle {
+    0%, 100% { transform: translateX(0); }
+    33% { transform: translateX(-4px); }
+    66% { transform: translateX(4px); }
+  }
+
+  .code-sep {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.5rem;
+    color: var(--ink-soft);
+    font-weight: 700;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    padding: 14px 20px;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    width: 100%;
+  }
+
+  .btn-primary:hover {
+    background: #c92a37;
+    transform: translateY(-1px);
+  }
+
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--ink-soft);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 16px;
+    font-family: inherit;
+    font-weight: 500;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .feedback {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    min-height: 22px;
+  }
+
+  .feedback.ok { color: var(--success); }
+  .feedback.err { color: var(--accent); }
+
+  /* ============== PANTALLA DE CONFIGURACIÓN ============== */
+  .config-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(42, 42, 53, 0.6);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 100;
+  }
+
+  .config-overlay.show { display: flex; }
+
+  .config-modal {
+    background: var(--surface);
+    border-radius: 24px;
+    padding: 32px;
+    max-width: 680px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .config-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .config-subtitle {
+    color: var(--ink-soft);
+    margin-bottom: 24px;
+  }
+
+  .config-section {
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .config-section:last-of-type {
+    border-bottom: none;
+  }
+
+  .section-label {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .number-inputs {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+  }
+
+  @media (max-width: 600px) {
+    .number-inputs { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  .num-input-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .num-label {
+    font-size: 0.75rem;
+    color: var(--ink-soft);
+    text-align: center;
+  }
+
+  .num-input {
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 1.1rem;
+    text-align: center;
+    transition: border-color 0.15s;
+    -moz-appearance: textfield;
+  }
+
+  .num-input::-webkit-outer-spin-button,
+  .num-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .num-input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .num-input.invalid {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  .preview-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--ink-soft);
+    text-align: center;
+    min-height: 16px;
+  }
+
+  .preview-code.valid { color: var(--success); }
+  .preview-code.invalid { color: var(--accent); }
+
+  .count-control {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .count-btn {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    width: 36px;
+    height: 36px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    cursor: pointer;
+    color: var(--ink);
+  }
+
+  .count-btn:hover { border-color: var(--accent); }
+
+  .count-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 1.2rem;
+    min-width: 30px;
+    text-align: center;
+  }
+
+  .upload-area {
+    border: 2px dashed var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .upload-area:hover {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  .upload-area.has-image {
+    border-style: solid;
+    border-color: var(--success);
+    background: var(--success-soft);
+  }
+
+  .upload-icon {
+    font-size: 2rem;
+    margin-bottom: 8px;
+  }
+
+  .config-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .config-actions .btn-primary { flex: 1; min-width: 120px; }
+
+  .mini-preview {
+    max-width: 100px;
+    max-height: 100px;
+    border-radius: 8px;
+    margin-top: 12px;
+  }
+
+  /* ===== Confeti ===== */
+  .confetti {
+    position: fixed;
+    width: 12px;
+    height: 12px;
+    pointer-events: none;
+    z-index: 200;
+  }
+
+  @keyframes fall {
+    to { transform: translateY(120vh) rotate(720deg); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="stage">
+
+    <div class="title-bar">
+      <div class="title">
+        <div class="title-icon">?</div>
+        <div>Decodificador de descomposición prima</div>
+      </div>
+      <button class="icon-btn" id="configBtn" title="Configuración">⚙</button>
+    </div>
+
+    <div>
+      <div class="image-frame" id="imageFrame">
+        <div class="placeholder" id="placeholder">
+          <div class="placeholder-icon">🎁</div>
+          <div class="placeholder-text">Abre ⚙ para cargar la imagen</div>
+        </div>
+        <img id="pokemonImg" alt="Imagen oculta" />
+      </div>
+      <div class="reveal-text" id="revealText">¡Lo lograron! 🎉</div>
+      <div class="progress-dots" id="progressDots"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">Panel docente</div>
+      <div class="num-grid" id="numGrid"></div>
+      <div id="decodeArea"></div>
+      <button class="btn-secondary" id="resetBtn">↻ Reiniciar ronda</button>
+    </div>
+
+  </div>
+</div>
+
+<div class="config-overlay" id="configOverlay">
+  <div class="config-modal">
+    <div class="config-title">
+      <span>Configuración</span>
+      <button class="icon-btn" id="closeConfigBtn">×</button>
+    </div>
+    <div class="config-subtitle">Los cambios se guardan automáticamente.</div>
+
+    <div class="config-section">
+      <div class="section-label">
+        <span>Cantidad de números</span>
+        <div class="count-control">
+          <button class="count-btn" id="countMinus">−</button>
+          <span class="count-value" id="countValue">5</span>
+          <button class="count-btn" id="countPlus">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="config-section">
+      <div class="section-label">
+        <span>Números a decodificar</span>
+        <span style="font-size: 0.8rem; color: var(--ink-soft); font-weight: 400;">(2–999, compuestos)</span>
+      </div>
+      <div class="number-inputs" id="numberInputs"></div>
+    </div>
+
+    <div class="config-section">
+      <div class="section-label">
+        <span>Imagen oculta</span>
+      </div>
+      <div class="upload-area" id="uploadArea">
+        <div class="upload-icon">🖼️</div>
+        <div id="uploadText">Haz clic para subir imagen</div>
+        <img class="mini-preview" id="miniPreview" style="display: none;" alt="" />
+      </div>
+      <input type="file" id="fileInput" accept="image/*" style="display: none;" />
+    </div>
+
+    <div class="config-section">
+      <div class="section-label"><span>Compartir configuración</span></div>
+      <div class="config-actions">
+        <button class="btn-secondary" id="exportBtn">📥 Exportar JSON</button>
+        <button class="btn-secondary" id="importBtn">📤 Importar JSON</button>
+        <button class="btn-secondary" id="clearBtn" style="color: var(--accent); border-color: var(--accent);">🗑 Borrar todo</button>
+      </div>
+      <input type="file" id="importInput" accept=".json,application/json" style="display: none;" />
+    </div>
+
+    <button class="btn-primary" id="applyBtn">Aplicar y cerrar</button>
+  </div>
+</div>
+
+<script>
+// ===== Utilidades =====
+function factorize(n) {
+  const factors = [];
+  let x = n;
+  for (let p = 2; p * p <= x; p++) {
+    while (x % p === 0) {
+      factors.push(p);
+      x = Math.floor(x / p);
+    }
+  }
+  if (x > 1) factors.push(x);
+  return factors;
+}
+
+function isComposite(n) {
+  if (n < 2) return false;
+  const f = factorize(n);
+  return f.length >= 2;
+}
+
+// ===== Estado =====
+const DEFAULTS = {
+  count: 5,
+  numbers: [12, 18, 20, 30, 45],
+  image: null
+};
+
+let state = loadState();
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem('decoder-config');
+    if (raw) return { ...DEFAULTS, ...JSON.parse(raw) };
+  } catch(e) {}
+  return { ...DEFAULTS };
+}
+
+function saveState() {
+  try {
+    localStorage.setItem('decoder-config', JSON.stringify(state));
+  } catch(e) {
+    console.error('Error guardando:', e);
+  }
+}
+
+// ===== DOM refs =====
+const imageFrame = document.getElementById('imageFrame');
+const placeholder = document.getElementById('placeholder');
+const img = document.getElementById('pokemonImg');
+const revealText = document.getElementById('revealText');
+const progressDots = document.getElementById('progressDots');
+const numGrid = document.getElementById('numGrid');
+const decodeArea = document.getElementById('decodeArea');
+const resetBtn = document.getElementById('resetBtn');
+const configBtn = document.getElementById('configBtn');
+const configOverlay = document.getElementById('configOverlay');
+const closeConfigBtn = document.getElementById('closeConfigBtn');
+const countValue = document.getElementById('countValue');
+const countMinus = document.getElementById('countMinus');
+const countPlus = document.getElementById('countPlus');
+const numberInputs = document.getElementById('numberInputs');
+const uploadArea = document.getElementById('uploadArea');
+const uploadText = document.getElementById('uploadText');
+const miniPreview = document.getElementById('miniPreview');
+const fileInput = document.getElementById('fileInput');
+const exportBtn = document.getElementById('exportBtn');
+const importBtn = document.getElementById('importBtn');
+const importInput = document.getElementById('importInput');
+const clearBtn = document.getElementById('clearBtn');
+const applyBtn = document.getElementById('applyBtn');
+
+// ===== Estado de ronda =====
+let completed = new Set();
+let activeNum = null;
+
+// ===== Renderizado del panel principal =====
+function renderMain() {
+  // Imagen
+  if (state.image) {
+    img.src = state.image;
+    img.style.display = 'block';
+    placeholder.style.display = 'none';
+  } else {
+    img.style.display = 'none';
+    placeholder.style.display = 'block';
+  }
+  updateImageEffect();
+
+  // Dots de progreso
+  progressDots.innerHTML = '';
+  for (let i = 0; i < state.numbers.length; i++) {
+    const d = document.createElement('div');
+    d.className = 'prog-dot' + (i < completed.size ? ' filled' : '');
+    progressDots.appendChild(d);
+  }
+
+  // Botones de número
+  numGrid.innerHTML = '';
+  state.numbers.forEach((num, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'num-btn';
+    if (completed.has(idx)) btn.classList.add('done');
+    if (activeNum === idx) btn.classList.add('active');
+    btn.textContent = num;
+    btn.addEventListener('click', () => openDecode(idx));
+    numGrid.appendChild(btn);
+  });
+
+  // Revelación text
+  if (completed.size === state.numbers.length && state.numbers.length > 0) {
+    revealText.classList.add('show');
+  } else {
+    revealText.classList.remove('show');
+  }
+}
+
+function updateImageEffect() {
+  if (!state.image) return;
+  const total = state.numbers.length;
+  const done = completed.size;
+  const pct = total > 0 ? done / total : 0;
+  // blur: 20px → 0, saturación: 0 → 1
+  const blur = 20 * (1 - pct);
+  const sat = pct;
+  img.style.filter = `blur(${blur.toFixed(1)}px) saturate(${sat.toFixed(2)})`;
+}
+
+// ===== Panel de decodificación =====
+function openDecode(idx) {
+  if (completed.has(idx)) return;
+  activeNum = idx;
+  renderMain();
+  renderDecode();
+}
+
+function renderDecode() {
+  if (activeNum === null) {
+    decodeArea.innerHTML = '';
+    return;
+  }
+  const num = state.numbers[activeNum];
+  const factors = factorize(num);
+  const cellCount = factors.length;
+  
+  let cellsHtml = '';
+  for (let i = 0; i < cellCount; i++) {
+    cellsHtml += `<input type="number" class="code-cell" min="2" max="99" inputmode="numeric" data-idx="${i}" />`;
+    if (i < cellCount - 1) cellsHtml += '<span class="code-sep">·</span>';
+  }
+  
+  decodeArea.innerHTML = `
+    <div class="decode-panel">
+      <div class="decode-title">Descomponer</div>
+      <div class="decode-number">${num}</div>
+      <div class="code-input-row" id="codeRow">${cellsHtml}</div>
+      <button class="btn-primary" id="checkBtn">Verificar</button>
+      <div class="feedback" id="feedback"></div>
+    </div>
+  `;
+  
+  const cells = decodeArea.querySelectorAll('.code-cell');
+  cells.forEach((cell, i) => {
+    cell.addEventListener('input', (e) => {
+      // Auto-avance
+      if (e.target.value.length >= 2 && i < cells.length - 1) {
+        cells[i + 1].focus();
+      }
+    });
+    cell.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !e.target.value && i > 0) {
+        cells[i - 1].focus();
+      }
+      if (e.key === 'Enter') checkCode();
+    });
+  });
+  if (cells.length > 0) cells[0].focus();
+  
+  document.getElementById('checkBtn').addEventListener('click', checkCode);
+}
+
+function checkCode() {
+  const cells = decodeArea.querySelectorAll('.code-cell');
+  const feedback = document.getElementById('feedback');
+  const entered = Array.from(cells).map(c => parseInt(c.value, 10)).filter(v => !isNaN(v));
+  const num = state.numbers[activeNum];
+  const expected = factorize(num).sort((a,b) => a-b);
+  
+  if (entered.length !== expected.length) {
+    feedback.textContent = `Completa los ${expected.length} casilleros`;
+    feedback.className = 'feedback err';
+    return;
+  }
+  
+  const actual = [...entered].sort((a,b) => a-b);
+  const correct = expected.length === actual.length && expected.every((v, i) => v === actual[i]);
+  
+  if (correct) {
+    completed.add(activeNum);
+    feedback.textContent = '¡Correcto! ✓';
+    feedback.className = 'feedback ok';
+    playSound('success');
+    
+    setTimeout(() => {
+      activeNum = null;
+      renderMain();
+      renderDecode();
+      
+      if (completed.size === state.numbers.length) {
+        setTimeout(() => {
+          playSound('complete');
+          launchConfetti();
+        }, 900);
+      }
+    }, 1100);
+  } else {
+    feedback.textContent = 'Incorrecto. Revisa la descomposición.';
+    feedback.className = 'feedback err';
+    cells.forEach(c => c.classList.add('error'));
+    imageFrame.classList.add('shake');
+    playSound('error');
+    setTimeout(() => {
+      cells.forEach(c => c.classList.remove('error'));
+      imageFrame.classList.remove('shake');
+    }, 500);
+  }
+}
+
+// ===== Sonidos =====
+function playSound(type) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (type === 'success') {
+      [523, 659, 784].forEach((f, i) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.frequency.value = f;
+        o.type = 'sine';
+        g.gain.setValueAtTime(0.18, ctx.currentTime + i * 0.07);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.07 + 0.22);
+        o.start(ctx.currentTime + i * 0.07);
+        o.stop(ctx.currentTime + i * 0.07 + 0.22);
+      });
+    } else if (type === 'error') {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.setValueAtTime(220, ctx.currentTime);
+      o.frequency.exponentialRampToValueAtTime(110, ctx.currentTime + 0.2);
+      o.type = 'square';
+      g.gain.setValueAtTime(0.12, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+      o.start();
+      o.stop(ctx.currentTime + 0.25);
+    } else if (type === 'complete') {
+      [523, 659, 784, 1047, 1319].forEach((f, i) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.frequency.value = f;
+        o.type = 'sine';
+        g.gain.setValueAtTime(0.2, ctx.currentTime + i * 0.1);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.1 + 0.3);
+        o.start(ctx.currentTime + i * 0.1);
+        o.stop(ctx.currentTime + i * 0.1 + 0.3);
+      });
+    }
+  } catch(e) {}
+}
+
+function launchConfetti() {
+  const colors = ['#e63946', '#f2b93e', '#2a9d8f', '#f4a261', '#fdd8dc'];
+  for (let i = 0; i < 80; i++) {
+    setTimeout(() => {
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.left = Math.random() * 100 + 'vw';
+      c.style.top = '-20px';
+      c.style.background = colors[Math.floor(Math.random() * colors.length)];
+      c.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+      c.style.animation = `fall ${2 + Math.random() * 2}s linear forwards`;
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 5000);
+    }, i * 25);
+  }
+}
+
+// ===== Configuración =====
+function renderConfig() {
+  countValue.textContent = state.count;
+  
+  numberInputs.innerHTML = '';
+  for (let i = 0; i < state.count; i++) {
+    const wrap = document.createElement('div');
+    wrap.className = 'num-input-wrap';
+    const num = state.numbers[i] ?? '';
+    wrap.innerHTML = `
+      <div class="num-label">N° ${i + 1}</div>
+      <input type="number" class="num-input" data-idx="${i}" value="${num}" min="4" max="9999" />
+      <div class="preview-code" data-idx="${i}"></div>
+    `;
+    numberInputs.appendChild(wrap);
+  }
+  numberInputs.querySelectorAll('.num-input').forEach(inp => {
+    inp.addEventListener('input', onNumInputChange);
+    updatePreview(inp);
+  });
+  
+  // Upload area
+  if (state.image) {
+    uploadArea.classList.add('has-image');
+    uploadText.textContent = 'Imagen cargada (clic para cambiar)';
+    miniPreview.src = state.image;
+    miniPreview.style.display = 'inline-block';
+  } else {
+    uploadArea.classList.remove('has-image');
+    uploadText.textContent = 'Haz clic para subir imagen';
+    miniPreview.style.display = 'none';
+  }
+}
+
+function onNumInputChange(e) {
+  const idx = parseInt(e.target.dataset.idx, 10);
+  const val = parseInt(e.target.value, 10);
+  state.numbers[idx] = isNaN(val) ? null : val;
+  updatePreview(e.target);
+  saveState();
+}
+
+function updatePreview(input) {
+  const idx = parseInt(input.dataset.idx, 10);
+  const val = parseInt(input.value, 10);
+  const preview = input.parentElement.querySelector('.preview-code');
+  if (isNaN(val) || val < 2) {
+    preview.textContent = '—';
+    preview.className = 'preview-code';
+    input.classList.remove('invalid');
+    return;
+  }
+  if (!isComposite(val)) {
+    preview.textContent = 'debe ser compuesto';
+    preview.className = 'preview-code invalid';
+    input.classList.add('invalid');
+    return;
+  }
+  const f = factorize(val);
+  preview.textContent = f.join(' · ');
+  preview.className = 'preview-code valid';
+  input.classList.remove('invalid');
+}
+
+countMinus.addEventListener('click', () => {
+  if (state.count > 1) {
+    state.count--;
+    state.numbers = state.numbers.slice(0, state.count);
+    saveState();
+    renderConfig();
+  }
+});
+countPlus.addEventListener('click', () => {
+  if (state.count < 10) {
+    state.count++;
+    if (state.numbers.length < state.count) {
+      state.numbers.push(12);
+    }
+    saveState();
+    renderConfig();
+  }
+});
+
+uploadArea.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    state.image = ev.target.result;
+    saveState();
+    renderConfig();
+  };
+  reader.readAsDataURL(file);
+});
+
+exportBtn.addEventListener('click', () => {
+  const exportState = { count: state.count, numbers: state.numbers, image: state.image };
+  const blob = new Blob([JSON.stringify(exportState, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'decodificador-config.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+importBtn.addEventListener('click', () => importInput.click());
+importInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (data.count && Array.isArray(data.numbers)) {
+        state.count = Math.max(1, Math.min(10, data.count));
+        state.numbers = data.numbers.slice(0, state.count);
+        if (data.image) state.image = data.image;
+        saveState();
+        renderConfig();
+        alert('Configuración importada correctamente.');
+      }
+    } catch(err) {
+      alert('Error al leer el archivo JSON.');
+    }
+  };
+  reader.readAsText(file);
+});
+
+clearBtn.addEventListener('click', () => {
+  if (confirm('¿Borrar toda la configuración? Esto no se puede deshacer.')) {
+    localStorage.removeItem('decoder-config');
+    state = { ...DEFAULTS };
+    completed.clear();
+    activeNum = null;
+    saveState();
+    renderConfig();
+    renderMain();
+  }
+});
+
+// ===== Reset ronda =====
+resetBtn.addEventListener('click', () => {
+  completed.clear();
+  activeNum = null;
+  renderMain();
+  renderDecode();
+});
+
+// ===== Abrir/cerrar config =====
+configBtn.addEventListener('click', () => {
+  renderConfig();
+  configOverlay.classList.add('show');
+});
+closeConfigBtn.addEventListener('click', () => {
+  configOverlay.classList.remove('show');
+});
+applyBtn.addEventListener('click', () => {
+  // Filtrar números inválidos
+  state.numbers = state.numbers.map(n => {
+    const v = parseInt(n, 10);
+    return (!isNaN(v) && isComposite(v)) ? v : null;
+  }).filter(n => n !== null);
+  state.count = state.numbers.length;
+  saveState();
+  completed.clear();
+  activeNum = null;
+  configOverlay.classList.remove('show');
+  renderMain();
+  renderDecode();
+});
+
+// Cerrar modal al clicar fuera
+configOverlay.addEventListener('click', (e) => {
+  if (e.target === configOverlay) {
+    configOverlay.classList.remove('show');
+  }
+});
+
+// ===== Inicio =====
+renderMain();
+renderDecode();
+</script>
+
+</body>
+</html>
