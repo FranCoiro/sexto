@@ -91,15 +91,48 @@
     transform: translateY(-1px);
   }
 
-  /* ===== Zona izquierda: Tablero + Bandeja ===== */
+  /* ===== Zona izquierda: Tablero + Bandeja lateral ===== */
   .play-area {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;   /* ← bandeja al lado del tablero */
     gap: 16px;
+    align-items: stretch;
   }
 
-  .board-wrap {
+  /* ---- Bandeja lateral ---- */
+  .tray-wrap {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 20px;
+    padding: 14px 10px;
+    width: 150px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .tray-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+
+  .tray {
     position: relative;
+    flex: 1;
+    min-height: 300px;
+  }
+
+  /* ---- Tablero ---- */
+  .board-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
   }
 
   .board-label {
@@ -118,6 +151,7 @@
     aspect-ratio: 1;
     position: relative;
     overflow: visible;
+    flex: 1;
   }
 
   .board.complete {
@@ -143,28 +177,6 @@
     padding: 2rem;
     pointer-events: none;
     opacity: 0.5;
-  }
-
-  .tray-wrap {
-    background: var(--surface);
-    border: 2px solid var(--border);
-    border-radius: 20px;
-    padding: 16px;
-    min-height: 140px;
-  }
-
-  .tray-label {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--ink-soft);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 12px;
-  }
-
-  .tray {
-    position: relative;
-    min-height: 110px;
   }
 
   /* ===== Piezas ===== */
@@ -586,7 +598,16 @@
       <button class="icon-btn" id="configBtn" title="Configuración">⚙</button>
     </div>
 
+    <!-- ===== Área de juego: bandeja lateral + tablero ===== -->
     <div class="play-area">
+
+      <!-- Bandeja lateral (izquierda) -->
+      <div class="tray-wrap">
+        <div class="tray-label">Piezas</div>
+        <div class="tray" id="tray"></div>
+      </div>
+
+      <!-- Tablero -->
       <div class="board-wrap">
         <div class="board-label">Tablero — aquí armamos</div>
         <div class="board" id="board">
@@ -597,12 +618,9 @@
         <div class="victory-text" id="victoryText">¡Rompecabezas completo! 🎉</div>
       </div>
 
-      <div class="tray-wrap">
-        <div class="tray-label">Piezas disponibles</div>
-        <div class="tray" id="tray"></div>
-      </div>
     </div>
 
+    <!-- Panel docente (derecha) -->
     <div class="panel">
       <div class="panel-header">Panel docente</div>
       <div class="num-grid" id="numGrid"></div>
@@ -685,31 +703,26 @@ function isComposite(n) {
   return factorize(n).length >= 2;
 }
 
-// ===== Cálculo de grilla a partir de cantidad =====
-// Dado N piezas, retorna [rows, cols] lo más cuadrado posible
 function getGrid(n) {
   if (n <= 1) return [1, 1];
   if (n === 2) return [1, 2];
   if (n === 3) return [1, 3];
   if (n === 4) return [2, 2];
-  if (n === 5) return [1, 5];  // fila horizontal, para que se vea la imagen
+  if (n === 5) return [1, 5];
   if (n === 6) return [2, 3];
-  if (n === 7) return [1, 7];  // también fila
+  if (n === 7) return [1, 7];
   if (n === 8) return [2, 4];
   if (n === 9) return [3, 3];
   if (n === 10) return [2, 5];
   return [Math.ceil(Math.sqrt(n)), Math.ceil(Math.sqrt(n))];
 }
 
-// ===== Generación de bordes del puzzle =====
 function generatePuzzleEdges(rows, cols, seed) {
-  // Seeded random con LCG simple
   let s = seed;
   function rand() {
     s = (s * 1103515245 + 12345) & 0x7fffffff;
     return s / 0x7fffffff;
   }
-
   const horizontal = Array.from({length: rows + 1}, () => new Array(cols).fill(0));
   for (let r = 1; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
@@ -733,8 +746,6 @@ function piecePath(row, col, pw, ph, edges, tabSize = 0.22) {
   const left = edges.vertical[row][col];
   const right = edges.vertical[row][col + 1];
   const path = ["M 0 0"];
-  
-  // Top edge
   if (top === 0) {
     path.push(`L ${pw} 0`);
   } else {
@@ -745,8 +756,6 @@ function piecePath(row, col, pw, ph, edges, tabSize = 0.22) {
     path.push(`C ${midX - tabW/2} ${cpY}, ${midX + tabW/2} ${cpY}, ${midX + tabW/2} 0`);
     path.push(`L ${pw} 0`);
   }
-  
-  // Right edge
   if (right === 0) {
     path.push(`L ${pw} ${ph}`);
   } else {
@@ -757,8 +766,6 @@ function piecePath(row, col, pw, ph, edges, tabSize = 0.22) {
     path.push(`C ${cpX} ${midY - tabH/2}, ${cpX} ${midY + tabH/2}, ${pw} ${midY + tabH/2}`);
     path.push(`L ${pw} ${ph}`);
   }
-  
-  // Bottom edge
   if (bottom === 0) {
     path.push(`L 0 ${ph}`);
   } else {
@@ -769,8 +776,6 @@ function piecePath(row, col, pw, ph, edges, tabSize = 0.22) {
     path.push(`C ${midX + tabW/2} ${cpY}, ${midX - tabW/2} ${cpY}, ${midX - tabW/2} ${ph}`);
     path.push(`L 0 ${ph}`);
   }
-  
-  // Left edge
   if (left === 0) {
     path.push(`L 0 0`);
   } else {
@@ -781,7 +786,6 @@ function piecePath(row, col, pw, ph, edges, tabSize = 0.22) {
     path.push(`C ${cpX} ${midY + tabH/2}, ${cpX} ${midY - tabH/2}, 0 ${midY - tabH/2}`);
     path.push(`L 0 0`);
   }
-  
   path.push("Z");
   return path.join(" ");
 }
@@ -789,7 +793,7 @@ function piecePath(row, col, pw, ph, edges, tabSize = 0.22) {
 // ===== Estado =====
 const DEFAULTS = {
   count: 6,
-  numbers: [12, 18, 20, 24, 30, 45],
+  numbers: [12, 16, 18, 20, 30, 45],   // ← números actualizados
   image: null
 };
 
@@ -811,7 +815,6 @@ function saveState() {
 
 // ===== DOM =====
 const board = document.getElementById('board');
-const boardPlaceholder = document.getElementById('boardPlaceholder');
 const tray = document.getElementById('tray');
 const numGrid = document.getElementById('numGrid');
 const decodeArea = document.getElementById('decodeArea');
@@ -836,51 +839,37 @@ const applyBtn = document.getElementById('applyBtn');
 const victoryText = document.getElementById('victoryText');
 
 // ===== Estado de ronda =====
-let completed = new Set();       // índices de números ya decodificados
-let activeNum = null;            // número actualmente activo en el panel
-let pieces = [];                 // metadatos de piezas
+let completed = new Set();
+let activeNum = null;
+let pieces = [];
 let puzzleGrid = { rows: 2, cols: 3 };
-let piecesPlaced = new Set();    // índices de piezas ya colocadas correctamente
+let piecesPlaced = new Set();
 
 // ===== Preparación del rompecabezas =====
 function preparePuzzle() {
   const n = state.numbers.length;
   puzzleGrid = { rows: getGrid(n)[0], cols: getGrid(n)[1] };
   const { rows, cols } = puzzleGrid;
-  
-  // Tamaño del tablero en píxeles (se ajusta al CSS, pero necesitamos referencia)
-  // Vamos a usar viewBox SVG, así que unidades internas
-  const boardSize = 600; // unidades SVG internas
+  const boardSize = 600;
   const pieceW = boardSize / cols;
   const pieceH = boardSize / rows;
-  
   const edges = generatePuzzleEdges(rows, cols, 42 + n);
-  
   pieces = [];
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       const idx = r * cols + c;
-      pieces.push({
-        idx,
-        row: r,
-        col: c,
-        path: piecePath(r, c, pieceW, pieceH, edges),
-        pieceW,
-        pieceH,
-        boardSize
-      });
+      pieces.push({ idx, row: r, col: c, path: piecePath(r, c, pieceW, pieceH, edges), pieceW, pieceH, boardSize });
     }
   }
 }
 
-// ===== Renderizado del panel principal =====
+// ===== Renderizado =====
 function render() {
   preparePuzzle();
   renderBoard();
   renderTray();
   renderNumButtons();
   renderDecode();
-  
   const totalNums = state.numbers.length;
   if (completed.size === totalNums && totalNums > 0 && piecesPlaced.size === pieces.length) {
     victoryText.classList.add('show');
@@ -893,21 +882,13 @@ function render() {
 
 function renderBoard() {
   board.innerHTML = '<div class="board-placeholder" id="boardPlaceholder">Cada clave descifrada libera una pieza.<br>Arrástrala aquí.</div>';
-  
-  // Crear SVG base para las piezas colocadas
   const svgNS = 'http://www.w3.org/2000/svg';
   const boardSvg = document.createElementNS(svgNS, 'svg');
   boardSvg.setAttribute('id', 'boardSvg');
   boardSvg.setAttribute('viewBox', `0 0 ${pieces[0]?.boardSize || 600} ${pieces[0]?.boardSize || 600}`);
   boardSvg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-  boardSvg.style.position = 'absolute';
-  boardSvg.style.inset = '0';
-  boardSvg.style.width = '100%';
-  boardSvg.style.height = '100%';
-  boardSvg.style.overflow = 'visible';
+  boardSvg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;overflow:visible;';
   board.appendChild(boardSvg);
-  
-  // Si no hay piezas liberadas, mostrar placeholder
   if (completed.size === 0) {
     document.getElementById('boardPlaceholder').style.display = 'flex';
   } else {
@@ -918,46 +899,39 @@ function renderBoard() {
 
 function renderTray() {
   tray.innerHTML = '';
-  
-  // Para cada número decodificado, crear su pieza (si no está en el tablero)
   for (const numIdx of completed) {
-    const pieceIdx = numIdx; // asumimos 1 número = 1 pieza con ese índice
+    const pieceIdx = numIdx;
     if (pieceIdx >= pieces.length) continue;
     if (piecesPlaced.has(pieceIdx)) continue;
-    
-    // Chequear si la pieza ya está renderizada (podría estarlo por haber sido colocada mal)
     const existing = document.querySelector(`.piece[data-idx="${pieceIdx}"]`);
     if (existing && existing.parentElement === tray) continue;
-    
     createPieceElement(pieceIdx, 'tray', true);
   }
-  
   layoutTrayPieces();
 }
 
+// ===== Creación de piezas =====
 function createPieceElement(pieceIdx, parent, isNew = false) {
   const piece = pieces[pieceIdx];
   if (!piece) return null;
-  
   const svgNS = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(svgNS, 'svg');
   svg.classList.add('piece');
   if (isNew) svg.classList.add('entering');
   svg.dataset.idx = pieceIdx;
-  
-  // Calcular bounding box de la pieza (puede exceder pw x ph por las lengüetas)
+
   const tabOverflow = piece.pieceW * 0.22;
   const viewBoxW = piece.pieceW + 2 * tabOverflow;
   const viewBoxH = piece.pieceH + 2 * tabOverflow;
   svg.setAttribute('viewBox', `${-tabOverflow} ${-tabOverflow} ${viewBoxW} ${viewBoxH}`);
-  
-  // Tamaño visual: dependerá del contexto
-  const trayPieceSize = 100; // px aprox
-  const scale = trayPieceSize / Math.max(piece.pieceW, piece.pieceH);
+
+  // Tamaño en bandeja: encaja en el ancho lateral (~130px disponibles)
+  const trayAvailableW = 126;  // ≈ 150px tray - 2×10px padding
+  const scale = trayAvailableW / viewBoxW;
   svg.style.width = `${viewBoxW * scale}px`;
   svg.style.height = `${viewBoxH * scale}px`;
-  
-  // Path + clipPath para imagen
+  svg.style.position = 'absolute';
+
   const clipId = `clip-${pieceIdx}-${Date.now()}`;
   const defs = document.createElementNS(svgNS, 'defs');
   const clipPath = document.createElementNS(svgNS, 'clipPath');
@@ -967,31 +941,25 @@ function createPieceElement(pieceIdx, parent, isNew = false) {
   clipPath.appendChild(clipShape);
   defs.appendChild(clipPath);
   svg.appendChild(defs);
-  
-  // Imagen (si existe) clipeada
+
   if (state.image) {
     const image = document.createElementNS(svgNS, 'image');
     image.setAttribute('href', state.image);
-    // La imagen completa ocupa todo el tablero
-    const imgX = -piece.col * piece.pieceW;
-    const imgY = -piece.row * piece.pieceH;
-    image.setAttribute('x', imgX);
-    image.setAttribute('y', imgY);
+    image.setAttribute('x', -piece.col * piece.pieceW);
+    image.setAttribute('y', -piece.row * piece.pieceH);
     image.setAttribute('width', piece.boardSize);
     image.setAttribute('height', piece.boardSize);
     image.setAttribute('preserveAspectRatio', 'xMidYMid slice');
     image.setAttribute('clip-path', `url(#${clipId})`);
     svg.appendChild(image);
   } else {
-    // Sin imagen: color sólido
     const colors = ['#e63946', '#2a9d8f', '#f2b93e', '#457b9d', '#f4a261', '#a8dadc', '#e76f51', '#264653', '#e9c46a', '#8ab17d'];
     const pathEl = document.createElementNS(svgNS, 'path');
     pathEl.setAttribute('d', piece.path);
     pathEl.setAttribute('fill', colors[pieceIdx % colors.length]);
     svg.appendChild(pathEl);
   }
-  
-  // Contorno
+
   const outline = document.createElementNS(svgNS, 'path');
   outline.setAttribute('d', piece.path);
   outline.setAttribute('fill', 'none');
@@ -999,40 +967,31 @@ function createPieceElement(pieceIdx, parent, isNew = false) {
   outline.setAttribute('stroke-width', '2');
   outline.setAttribute('vector-effect', 'non-scaling-stroke');
   svg.appendChild(outline);
-  
-  // Posicionamiento absoluto
-  svg.style.position = 'absolute';
-  
-  if (parent === 'tray') {
-    tray.appendChild(svg);
-  } else {
-    board.appendChild(svg);
-  }
-  
-  // Drag listeners
+
+  if (parent === 'tray') tray.appendChild(svg);
+  else board.appendChild(svg);
+
   attachDragHandlers(svg, pieceIdx);
-  
   return svg;
 }
 
+// ===== Layout de bandeja lateral (apilado vertical) =====
 function layoutTrayPieces() {
   const trayPieces = Array.from(tray.querySelectorAll('.piece'));
   if (trayPieces.length === 0) return;
-  
+
   const trayRect = tray.getBoundingClientRect();
   const gap = 10;
-  let x = 10;
-  let y = 10;
-  
-  trayPieces.forEach((svg, i) => {
-    const w = parseFloat(svg.style.width) || 120;
-    if (x + w > trayRect.width - 10) {
-      x = 10;
-      y += 120 + gap;
-    }
+  let y = 8;
+
+  trayPieces.forEach(svg => {
+    const h = parseFloat(svg.style.height) || 90;
+    // Centrar horizontalmente
+    const w = parseFloat(svg.style.width) || 126;
+    const x = Math.max(0, (trayRect.width - w) / 2);
     svg.style.left = `${x}px`;
     svg.style.top = `${y}px`;
-    x += w + gap;
+    y += h + gap;
   });
 }
 
@@ -1040,7 +999,7 @@ function layoutTrayPieces() {
 function attachDragHandlers(el, pieceIdx) {
   let isDragging = false;
   let startX, startY, initialLeft, initialTop;
-  
+
   function onPointerDown(e) {
     e.preventDefault();
     isDragging = true;
@@ -1050,20 +1009,15 @@ function attachDragHandlers(el, pieceIdx) {
     startY = e.clientY;
     initialLeft = rect.left;
     initialTop = rect.top;
-    
-    // Reparent al body para drag global (evita clipping por contenedor)
-    const parentRect = el.parentElement.getBoundingClientRect();
-    // Mover a document.body manteniendo posición visual
     document.body.appendChild(el);
     el.style.position = 'fixed';
     el.style.left = `${rect.left}px`;
     el.style.top = `${rect.top}px`;
     el.style.zIndex = '1000';
-    
     document.addEventListener('pointermove', onPointerMove);
     document.addEventListener('pointerup', onPointerUp);
   }
-  
+
   function onPointerMove(e) {
     if (!isDragging) return;
     const dx = e.clientX - startX;
@@ -1071,45 +1025,39 @@ function attachDragHandlers(el, pieceIdx) {
     el.style.left = `${initialLeft + dx}px`;
     el.style.top = `${initialTop + dy}px`;
   }
-  
+
   function onPointerUp(e) {
     if (!isDragging) return;
     isDragging = false;
     el.classList.remove('dragging');
     document.removeEventListener('pointermove', onPointerMove);
     document.removeEventListener('pointerup', onPointerUp);
-    
+
     const boardRect = board.getBoundingClientRect();
     const elRect = el.getBoundingClientRect();
     const elCenterX = elRect.left + elRect.width / 2;
     const elCenterY = elRect.top + elRect.height / 2;
     const piece = pieces[pieceIdx];
-    
+
     const insideBoard = elCenterX >= boardRect.left && elCenterX <= boardRect.right &&
                         elCenterY >= boardRect.top && elCenterY <= boardRect.bottom;
-    
+
     if (insideBoard) {
-      // Calcular posición correcta
       const scale = boardRect.width / piece.boardSize;
       const correctCenterX = boardRect.left + (piece.col * piece.pieceW + piece.pieceW / 2) * scale;
       const correctCenterY = boardRect.top + (piece.row * piece.pieceH + piece.pieceH / 2) * scale;
       const distance = Math.hypot(elCenterX - correctCenterX, elCenterY - correctCenterY);
-      // Snap generoso: 70% del tamaño de la pieza
       const snapThreshold = Math.min(piece.pieceW, piece.pieceH) * scale * 0.7;
-      
       if (distance < snapThreshold) {
-        // Snap a posición correcta
         snapPieceToBoard(el, pieceIdx);
       } else {
-        // Libre dentro del tablero: se queda donde se soltó
         placePieceFreelyOnBoard(el, pieceIdx, elRect);
       }
     } else {
-      // Fuera del tablero → vuelve a la bandeja
       returnToTray(el, pieceIdx);
     }
   }
-  
+
   el.addEventListener('pointerdown', onPointerDown);
 }
 
@@ -1118,73 +1066,56 @@ function snapPieceToBoard(el, pieceIdx) {
   const boardRect = board.getBoundingClientRect();
   const scale = boardRect.width / piece.boardSize;
   const tabOverflow = piece.pieceW * 0.22;
-  
   el.style.position = 'absolute';
   el.style.left = `${(piece.col * piece.pieceW - tabOverflow) * scale}px`;
   el.style.top = `${(piece.row * piece.pieceH - tabOverflow) * scale}px`;
   el.style.width = `${(piece.pieceW + 2 * tabOverflow) * scale}px`;
   el.style.height = `${(piece.pieceH + 2 * tabOverflow) * scale}px`;
   el.style.zIndex = '1';
-  
   board.appendChild(el);
   el.classList.remove('dragging');
   el.classList.add('placed', 'snapped');
   piecesPlaced.add(pieceIdx);
-  
   const ph = document.getElementById('boardPlaceholder');
   if (ph) ph.style.display = 'none';
-  
   playSound('place');
-  
-  // Chequear victoria después del snap
   checkVictory();
 }
 
 function placePieceFreelyOnBoard(el, pieceIdx, elRect) {
-  // Mueve la pieza al tablero conservando su posición visual
   const piece = pieces[pieceIdx];
   const boardRect = board.getBoundingClientRect();
   const scale = boardRect.width / piece.boardSize;
   const tabOverflow = piece.pieceW * 0.22;
-  
-  // Tamaño correcto de la pieza dentro del tablero
   const targetW = (piece.pieceW + 2 * tabOverflow) * scale;
   const targetH = (piece.pieceH + 2 * tabOverflow) * scale;
-  
-  // Calcular posición relativa al board (centrar la pieza donde estaba al soltar)
   const currentCenterX = elRect.left + elRect.width / 2;
   const currentCenterY = elRect.top + elRect.height / 2;
   const leftRelToBoard = currentCenterX - boardRect.left - targetW / 2;
   const topRelToBoard = currentCenterY - boardRect.top - targetH / 2;
-  
   el.style.position = 'absolute';
   el.style.left = `${leftRelToBoard}px`;
   el.style.top = `${topRelToBoard}px`;
   el.style.width = `${targetW}px`;
   el.style.height = `${targetH}px`;
   el.style.zIndex = '2';
-  
   board.appendChild(el);
   el.classList.remove('dragging', 'snapped');
   el.classList.add('placed');
-  // NO se agrega a piecesPlaced — no está en su posición correcta
   piecesPlaced.delete(pieceIdx);
-  
   const ph = document.getElementById('boardPlaceholder');
   if (ph) ph.style.display = 'none';
-  
   playSound('drop');
   checkVictory();
 }
 
 function returnToTray(el, pieceIdx) {
   const piece = pieces[pieceIdx];
-  const trayPieceSize = 100;
   const tabOverflow = piece.pieceW * 0.22;
   const viewBoxW = piece.pieceW + 2 * tabOverflow;
   const viewBoxH = piece.pieceH + 2 * tabOverflow;
-  const scale = trayPieceSize / Math.max(piece.pieceW, piece.pieceH);
-  
+  const trayAvailableW = 126;
+  const scale = trayAvailableW / viewBoxW;
   el.style.position = 'absolute';
   el.style.width = `${viewBoxW * scale}px`;
   el.style.height = `${viewBoxH * scale}px`;
@@ -1194,8 +1125,6 @@ function returnToTray(el, pieceIdx) {
   piecesPlaced.delete(pieceIdx);
   layoutTrayPieces();
   playSound('drop');
-  
-  // Si no queda ninguna pieza en el tablero, mostrar placeholder
   if (board.querySelectorAll('.piece').length === 0) {
     const ph = document.getElementById('boardPlaceholder');
     if (ph) ph.style.display = 'flex';
@@ -1239,20 +1168,15 @@ function openDecode(idx) {
 }
 
 function renderDecode() {
-  if (activeNum === null) {
-    decodeArea.innerHTML = '';
-    return;
-  }
+  if (activeNum === null) { decodeArea.innerHTML = ''; return; }
   const num = state.numbers[activeNum];
   const factors = factorize(num);
   const cellCount = factors.length;
-  
   let cellsHtml = '';
   for (let i = 0; i < cellCount; i++) {
-    cellsHtml += `<input type="number" class="code-cell" min="2" max="99" inputmode="numeric" data-idx="${i}" />`;
+    cellsHtml += `<input type="number" class="code-cell" min="2" max="9999" inputmode="numeric" data-idx="${i}" />`;
     if (i < cellCount - 1) cellsHtml += '<span class="code-sep">·</span>';
   }
-  
   decodeArea.innerHTML = `
     <div class="decode-panel">
       <div class="decode-title">Descomponer</div>
@@ -1262,7 +1186,6 @@ function renderDecode() {
       <div class="feedback" id="feedback"></div>
     </div>
   `;
-  
   const cells = decodeArea.querySelectorAll('.code-cell');
   cells.forEach((cell, i) => {
     cell.addEventListener('input', (e) => {
@@ -1274,7 +1197,6 @@ function renderDecode() {
     });
   });
   if (cells.length > 0) cells[0].focus();
-  
   document.getElementById('checkBtn').addEventListener('click', checkCode);
 }
 
@@ -1284,29 +1206,23 @@ function checkCode() {
   const entered = Array.from(cells).map(c => parseInt(c.value, 10)).filter(v => !isNaN(v));
   const num = state.numbers[activeNum];
   const expected = factorize(num).sort((a,b) => a-b);
-  
   if (entered.length !== expected.length) {
     feedback.textContent = `Completa los ${expected.length} casilleros`;
     feedback.className = 'feedback err';
     return;
   }
-  
   const actual = [...entered].sort((a,b) => a-b);
   const correct = expected.every((v, i) => v === actual[i]);
-  
   if (correct) {
     const idxCompleted = activeNum;
     completed.add(idxCompleted);
     feedback.textContent = '¡Correcto! Pieza liberada ✓';
     feedback.className = 'feedback ok';
     playSound('success');
-    
-    // Crear la pieza en la bandeja
     setTimeout(() => {
       createPieceElement(idxCompleted, 'tray', true);
       layoutTrayPieces();
     }, 300);
-    
     setTimeout(() => {
       activeNum = null;
       renderNumButtons();
@@ -1327,59 +1243,46 @@ function playSound(type) {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     if (type === 'success') {
       [523, 659, 784].forEach((f, i) => {
-        const o = ctx.createOscillator();
-        const g = ctx.createGain();
+        const o = ctx.createOscillator(); const g = ctx.createGain();
         o.connect(g); g.connect(ctx.destination);
-        o.frequency.value = f;
-        o.type = 'sine';
+        o.frequency.value = f; o.type = 'sine';
         g.gain.setValueAtTime(0.18, ctx.currentTime + i * 0.07);
         g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.07 + 0.22);
-        o.start(ctx.currentTime + i * 0.07);
-        o.stop(ctx.currentTime + i * 0.07 + 0.22);
+        o.start(ctx.currentTime + i * 0.07); o.stop(ctx.currentTime + i * 0.07 + 0.22);
       });
     } else if (type === 'error') {
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
+      const o = ctx.createOscillator(); const g = ctx.createGain();
       o.connect(g); g.connect(ctx.destination);
       o.frequency.setValueAtTime(220, ctx.currentTime);
       o.frequency.exponentialRampToValueAtTime(110, ctx.currentTime + 0.2);
       o.type = 'square';
       g.gain.setValueAtTime(0.12, ctx.currentTime);
       g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
-      o.start();
-      o.stop(ctx.currentTime + 0.25);
+      o.start(); o.stop(ctx.currentTime + 0.25);
     } else if (type === 'place') {
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
+      const o = ctx.createOscillator(); const g = ctx.createGain();
       o.connect(g); g.connect(ctx.destination);
       o.frequency.setValueAtTime(800, ctx.currentTime);
       o.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
       o.type = 'sine';
       g.gain.setValueAtTime(0.15, ctx.currentTime);
       g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
-      o.start();
-      o.stop(ctx.currentTime + 0.15);
+      o.start(); o.stop(ctx.currentTime + 0.15);
     } else if (type === 'drop') {
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
+      const o = ctx.createOscillator(); const g = ctx.createGain();
       o.connect(g); g.connect(ctx.destination);
-      o.frequency.value = 300;
-      o.type = 'sine';
+      o.frequency.value = 300; o.type = 'sine';
       g.gain.setValueAtTime(0.1, ctx.currentTime);
       g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
-      o.start();
-      o.stop(ctx.currentTime + 0.1);
+      o.start(); o.stop(ctx.currentTime + 0.1);
     } else if (type === 'complete') {
       [523, 659, 784, 1047, 1319].forEach((f, i) => {
-        const o = ctx.createOscillator();
-        const g = ctx.createGain();
+        const o = ctx.createOscillator(); const g = ctx.createGain();
         o.connect(g); g.connect(ctx.destination);
-        o.frequency.value = f;
-        o.type = 'sine';
+        o.frequency.value = f; o.type = 'sine';
         g.gain.setValueAtTime(0.2, ctx.currentTime + i * 0.1);
         g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.1 + 0.3);
-        o.start(ctx.currentTime + i * 0.1);
-        o.stop(ctx.currentTime + i * 0.1 + 0.3);
+        o.start(ctx.currentTime + i * 0.1); o.stop(ctx.currentTime + i * 0.1 + 0.3);
       });
     }
   } catch(e) {}
@@ -1407,7 +1310,6 @@ function renderConfig() {
   countValue.textContent = state.count;
   const [r, c] = getGrid(state.count);
   gridInfo.textContent = `Grilla: ${r} × ${c}`;
-  
   numberInputs.innerHTML = '';
   for (let i = 0; i < state.count; i++) {
     const wrap = document.createElement('div');
@@ -1424,7 +1326,6 @@ function renderConfig() {
     inp.addEventListener('input', onNumInputChange);
     updatePreview(inp);
   });
-  
   if (state.image) {
     uploadArea.classList.add('has-image');
     uploadText.textContent = 'Imagen cargada (clic para cambiar)';
@@ -1448,38 +1349,18 @@ function onNumInputChange(e) {
 function updatePreview(input) {
   const val = parseInt(input.value, 10);
   const preview = input.parentElement.querySelector('.preview-code');
-  if (isNaN(val) || val < 2) {
-    preview.textContent = '—';
-    preview.className = 'preview-code';
-    input.classList.remove('invalid');
-    return;
-  }
-  if (!isComposite(val)) {
-    preview.textContent = 'debe ser compuesto';
-    preview.className = 'preview-code invalid';
-    input.classList.add('invalid');
-    return;
-  }
+  if (isNaN(val) || val < 2) { preview.textContent = '—'; preview.className = 'preview-code'; input.classList.remove('invalid'); return; }
+  if (!isComposite(val)) { preview.textContent = 'debe ser compuesto'; preview.className = 'preview-code invalid'; input.classList.add('invalid'); return; }
   preview.textContent = factorize(val).join(' · ');
   preview.className = 'preview-code valid';
   input.classList.remove('invalid');
 }
 
 countMinus.addEventListener('click', () => {
-  if (state.count > 1) {
-    state.count--;
-    state.numbers = state.numbers.slice(0, state.count);
-    saveState();
-    renderConfig();
-  }
+  if (state.count > 1) { state.count--; state.numbers = state.numbers.slice(0, state.count); saveState(); renderConfig(); }
 });
 countPlus.addEventListener('click', () => {
-  if (state.count < 10) {
-    state.count++;
-    if (state.numbers.length < state.count) state.numbers.push(12);
-    saveState();
-    renderConfig();
-  }
+  if (state.count < 10) { state.count++; if (state.numbers.length < state.count) state.numbers.push(12); saveState(); renderConfig(); }
 });
 
 uploadArea.addEventListener('click', () => fileInput.click());
@@ -1487,22 +1368,14 @@ fileInput.addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = (ev) => {
-    state.image = ev.target.result;
-    saveState();
-    renderConfig();
-  };
+  reader.onload = (ev) => { state.image = ev.target.result; saveState(); renderConfig(); };
   reader.readAsDataURL(file);
 });
 
 exportBtn.addEventListener('click', () => {
-  const exportData = { count: state.count, numbers: state.numbers, image: state.image };
-  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify({ count: state.count, numbers: state.numbers, image: state.image }, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'decodificador-puzzle-config.json';
-  a.click();
+  const a = document.createElement('a'); a.href = url; a.download = 'decodificador-puzzle-config.json'; a.click();
   URL.revokeObjectURL(url);
 });
 
@@ -1518,13 +1391,10 @@ importInput.addEventListener('change', (e) => {
         state.count = Math.max(1, Math.min(10, data.count));
         state.numbers = data.numbers.slice(0, state.count);
         if (data.image) state.image = data.image;
-        saveState();
-        renderConfig();
+        saveState(); renderConfig();
         alert('Configuración importada correctamente.');
       }
-    } catch(err) {
-      alert('Error al leer el archivo JSON.');
-    }
+    } catch(err) { alert('Error al leer el archivo JSON.'); }
   };
   reader.readAsText(file);
 });
@@ -1533,50 +1403,26 @@ clearBtn.addEventListener('click', () => {
   if (confirm('¿Borrar toda la configuración? Esto no se puede deshacer.')) {
     localStorage.removeItem('decoder-puzzle-config');
     state = JSON.parse(JSON.stringify(DEFAULTS));
-    completed.clear();
-    piecesPlaced.clear();
-    activeNum = null;
-    saveState();
-    renderConfig();
-    render();
+    completed.clear(); piecesPlaced.clear(); activeNum = null;
+    saveState(); renderConfig(); render();
   }
 });
 
-resetBtn.addEventListener('click', () => {
-  completed.clear();
-  piecesPlaced.clear();
-  activeNum = null;
-  render();
-});
+resetBtn.addEventListener('click', () => { completed.clear(); piecesPlaced.clear(); activeNum = null; render(); });
 
-configBtn.addEventListener('click', () => {
-  renderConfig();
-  configOverlay.classList.add('show');
-});
+configBtn.addEventListener('click', () => { renderConfig(); configOverlay.classList.add('show'); });
 closeConfigBtn.addEventListener('click', () => configOverlay.classList.remove('show'));
 applyBtn.addEventListener('click', () => {
-  state.numbers = state.numbers.map(n => {
-    const v = parseInt(n, 10);
-    return (!isNaN(v) && isComposite(v)) ? v : null;
-  }).filter(n => n !== null);
+  state.numbers = state.numbers.map(n => { const v = parseInt(n, 10); return (!isNaN(v) && isComposite(v)) ? v : null; }).filter(n => n !== null);
   state.count = state.numbers.length || 1;
   if (state.numbers.length === 0) state.numbers = [12];
-  saveState();
-  completed.clear();
-  piecesPlaced.clear();
-  activeNum = null;
-  configOverlay.classList.remove('show');
-  render();
+  saveState(); completed.clear(); piecesPlaced.clear(); activeNum = null;
+  configOverlay.classList.remove('show'); render();
 });
+configOverlay.addEventListener('click', (e) => { if (e.target === configOverlay) configOverlay.classList.remove('show'); });
 
-configOverlay.addEventListener('click', (e) => {
-  if (e.target === configOverlay) configOverlay.classList.remove('show');
-});
-
-// Re-layout al cambiar tamaño ventana
 window.addEventListener('resize', () => {
   layoutTrayPieces();
-  // Re-posicionar piezas snappeadas (las libres no se reajustan — su posición era arbitraria)
   document.querySelectorAll('.piece.snapped').forEach(el => {
     const idx = parseInt(el.dataset.idx, 10);
     if (pieces[idx]) {
@@ -1592,9 +1438,7 @@ window.addEventListener('resize', () => {
   });
 });
 
-// Inicio
 render();
 </script>
-
 </body>
 </html>
