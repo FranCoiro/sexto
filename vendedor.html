@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sponsors — ¿Cuál bebida elige el equipo?</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Bangers&family=Barlow+Condensed:wght@400;700&family=Barlow:wght@400;600&display=swap');
+:root{
+  --bg:#0a0a0a;--panel:#111;--red:#ff0033;--gold:#ffe600;
+  --blue:#00aaff;--white:#ffffff;--gray:#888;
+  --speed:#ff6600;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--white);font-family:'Barlow',sans-serif;min-height:100vh;overflow-x:hidden;}
+
+/* ── MANGA BACKGROUND ── */
+.speed-lines{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:repeating-conic-gradient(from 0deg at 50% 50%, #111 0deg, #0a0a0a 1deg, #111 2deg);
+  opacity:.4;
+}
+
+/* ── INTRO ── */
+.intro{
+  position:fixed;inset:0;z-index:100;
+  background:#0a0a0a;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  overflow:hidden;
+  transition:opacity .8s;
+}
+.intro.hide{opacity:0;pointer-events:none;}
+
+/* manga speed lines behind */
+.intro-speed{
+  position:absolute;inset:0;
+  background:conic-gradient(from 0deg at 50% 50%,
+    transparent 0deg, rgba(255,230,0,.06) 1deg, transparent 2deg,
+    transparent 10deg, rgba(255,230,0,.06) 11deg, transparent 12deg,
+    transparent 20deg, rgba(255,230,0,.04) 21deg, transparent 22deg);
+}
+
+.sfx-knock{
+  font-family:'Bangers',cursive;
+  font-size:5rem;letter-spacing:6px;
+  color:var(--gold);
+  text-shadow:4px 4px 0 #000, 6px 6px 0 rgba(255,230,0,.3);
+  animation:sfxPop .3s ease infinite alternate;
+  position:relative;z-index:2;
+}
+@keyframes sfxPop{0%{transform:scale(1) rotate(-2deg);}100%{transform:scale(1.05) rotate(2deg);}}
+
+.sfx-sub{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:1rem;letter-spacing:4px;text-transform:uppercase;
+  color:var(--gray);margin-top:4px;position:relative;z-index:2;
+}
+
+/* manga panel border */
+.intro-panel{
+  background:#111;
+  border:4px solid var(--gold);
+  box-shadow:8px 8px 0 var(--gold),inset 0 0 40px rgba(0,0,0,.8);
+  border-radius:4px;
+  padding:24px 32px;
+  margin:20px 0;
+  max-width:420px;
+  text-align:center;
+  position:relative;z-index:2;
+  animation:panelIn .6s .5s cubic-bezier(.175,.885,.32,1.275) both;
+}
+@keyframes panelIn{0%{transform:scale(0) rotate(-5deg);opacity:0;}100%{transform:scale(1) rotate(0);opacity:1;}}
+
+.salesman-big{
+  font-size:5rem;
+  filter:drop-shadow(0 0 20px var(--gold));
+  animation:salemanWave .8s ease infinite alternate;
+}
+@keyframes salemanWave{0%{transform:translateY(0) rotate(-3deg);}100%{transform:translateY(-12px) rotate(3deg);}}
+
+.speech-manga{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:1.15rem;line-height:1.5;
+  color:var(--white);margin-top:12px;
+}
+.speech-manga strong{color:var(--gold);}
+
+/* halftone dots */
+.halftone{
+  position:absolute;inset:0;pointer-events:none;border-radius:2px;
+  background-image:radial-gradient(circle, rgba(255,230,0,.15) 1px, transparent 1px);
+  background-size:12px 12px;
+}
+
+.money-float{position:absolute;font-size:2.5rem;animation:mFloat 3s ease-in-out infinite;pointer-events:none;}
+@keyframes mFloat{0%,100%{transform:translateY(0) rotate(-5deg);}50%{transform:translateY(-20px) rotate(5deg);}}
+
+.btn-enter{
+  font-family:'Bangers',cursive;
+  font-size:1.6rem;letter-spacing:4px;
+  background:var(--gold);color:#000;
+  border:4px solid #000;
+  box-shadow:5px 5px 0 #000;
+  padding:12px 32px;cursor:pointer;
+  position:relative;z-index:2;
+  transition:all .15s;
+  margin-top:8px;
+  animation:btnPulse .5s ease infinite alternate;
+}
+@keyframes btnPulse{0%{box-shadow:5px 5px 0 #000;}100%{box-shadow:7px 7px 0 #000;transform:translate(-1px,-1px);}}
+.btn-enter:active{transform:translate(4px,4px);box-shadow:1px 1px 0 #000;}
+
+/* ── HEADER ── */
+header{
+  background:#000;
+  border-bottom:4px solid var(--gold);
+  padding:10px 24px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:50;
+  box-shadow:0 4px 0 var(--gold);
+}
+.h-title{
+  font-family:'Bangers',cursive;
+  font-size:2rem;letter-spacing:4px;
+  color:var(--gold);
+  text-shadow:3px 3px 0 #000;
+}
+.h-sub{font-family:'Barlow Condensed',sans-serif;font-size:.8rem;color:var(--gray);letter-spacing:2px;text-transform:uppercase;}
+.h-badge{
+  font-family:'Bangers',cursive;font-size:1.1rem;letter-spacing:2px;
+  background:var(--gold);color:#000;
+  border:3px solid #000;box-shadow:3px 3px 0 #000;
+  padding:4px 14px;
+}
+
+/* ── LAYOUT ── */
+.layout{display:grid;grid-template-columns:1fr 340px;gap:16px;padding:16px 24px;min-height:calc(100vh - 62px);position:relative;z-index:1;}
+.left{display:flex;flex-direction:column;gap:14px;}
+
+/* MANGA PANEL STYLE */
+.manga-panel{
+  background:#111;border:3px solid var(--white);
+  box-shadow:5px 5px 0 var(--white);
+  position:relative;overflow:hidden;
+}
+.manga-panel::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background-image:radial-gradient(circle,rgba(255,255,255,.04) 1px,transparent 1px);
+  background-size:10px 10px;
+}
+
+/* BRANDS TABLE */
+.brands-header{
+  display:grid;grid-template-columns:2fr 1fr 1fr 1fr;
+  background:var(--gold);padding:8px 14px;
+  border-bottom:3px solid #000;
+}
+.bh{font-family:'Bangers',cursive;font-size:1rem;letter-spacing:2px;color:#000;}
+.bh.c{text-align:center;}
+
+.brand-row{
+  display:grid;grid-template-columns:2fr 1fr 1fr 1fr;
+  border-bottom:2px solid rgba(255,255,255,.1);
+  cursor:pointer;transition:background .15s;
+}
+.brand-row:last-child{border:none;}
+.brand-row:hover{background:rgba(255,230,0,.08);}
+.brand-row.active-row{background:rgba(255,230,0,.15);border-left:4px solid var(--gold);}
+.brand-row.done-row{background:rgba(255,255,255,.04);}
+
+.br-name{
+  font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:700;
+  padding:14px;display:flex;align-items:center;gap:10px;
+}
+.br-logo{
+  width:36px;height:36px;border:3px solid var(--white);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;flex-shrink:0;
+  box-shadow:2px 2px 0 rgba(255,255,255,.3);
+}
+.br-stat{
+  font-family:'Bangers',cursive;font-size:2rem;
+  display:flex;align-items:center;justify-content:center;padding:14px 8px;
+}
+.br-agua{color:var(--blue);}
+.br-azucar{color:var(--red);}
+.br-ratio{
+  font-family:'Bangers',cursive;font-size:1.5rem;
+  display:flex;align-items:center;justify-content:center;padding:14px 8px;
+  color:rgba(255,255,255,.15);transition:all .4s;
+}
+.br-ratio.revealed{color:var(--white);}
+.br-ratio.best{color:var(--white);}
+.br-ratio.low{color:var(--white);}
+.br-ratio.mid{color:var(--white);}
+
+/* DRAG PANEL */
+.dp-header{
+  background:#000;padding:14px 18px;
+  display:flex;align-items:center;gap:14px;
+  border-bottom:3px solid rgba(255,255,255,.15);
+}
+.dp-logo{
+  width:52px;height:52px;border:3px solid var(--gold);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.8rem;flex-shrink:0;
+  box-shadow:3px 3px 0 var(--gold);
+}
+.dp-name{font-family:'Bangers',cursive;font-size:1.8rem;letter-spacing:2px;color:var(--gold);text-shadow:2px 2px 0 #000;}
+.dp-sub{font-family:'Barlow Condensed',sans-serif;font-size:.75rem;letter-spacing:2px;text-transform:uppercase;color:var(--gray);}
+.dp-stats{display:flex;gap:20px;padding:10px 18px;background:rgba(0,0,0,.4);border-bottom:2px solid rgba(255,255,255,.08);}
+.sbox{text-align:center;}
+.sval-a{font-family:'Bangers',cursive;font-size:2.5rem;color:var(--blue);line-height:1;}
+.sval-z{font-family:'Bangers',cursive;font-size:2.5rem;color:var(--red);line-height:1;}
+.slbl{font-family:'Barlow Condensed',sans-serif;font-size:.7rem;letter-spacing:1px;text-transform:uppercase;color:var(--gray);}
+
+.drag-area{padding:14px 18px;}
+.drag-inst{font-family:'Barlow Condensed',sans-serif;font-size:.85rem;letter-spacing:1px;color:var(--gray);margin-bottom:10px;text-transform:uppercase;}
+.slots-label{font-family:'Bangers',cursive;font-size:.8rem;letter-spacing:2px;color:var(--red);margin-bottom:6px;}
+
+.matches-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+.match-slot{
+  width:82px;min-height:72px;
+  border:2px dashed rgba(255,0,51,.4);
+  background:rgba(255,0,51,.04);
+  display:flex;flex-direction:column;align-items:center;padding:5px 3px;gap:3px;transition:all .2s;
+}
+.match-slot.drag-over{border-color:var(--gold);background:rgba(255,230,0,.1);box-shadow:0 0 16px rgba(255,230,0,.3);}
+.match-lbl{font-family:'Bangers',cursive;font-size:.7rem;letter-spacing:1px;color:var(--red);text-align:center;}
+.dropped-icons{display:flex;flex-wrap:wrap;gap:2px;justify-content:center;min-height:26px;align-items:center;}
+.d-icon{font-size:1.2rem;}
+
+.bank-lbl{font-family:'Bangers',cursive;font-size:.85rem;letter-spacing:2px;color:var(--blue);margin-bottom:6px;}
+.icons-bank{
+  display:flex;flex-wrap:wrap;gap:6px;padding:8px;
+  background:rgba(0,170,255,.05);
+  border:2px dashed rgba(0,170,255,.3);
+  min-height:46px;margin-bottom:12px;
+}
+.di{font-size:1.8rem;cursor:grab;transition:transform .15s;user-select:none;}
+.di:hover{transform:scale(1.25);}
+.di.used{opacity:.2;pointer-events:none;}
+
+/* RATIO RESULT — manga style */
+.ratio-row{
+  display:flex;align-items:center;gap:12px;
+  background:#000;border:3px solid rgba(255,255,255,.2);
+  box-shadow:4px 4px 0 rgba(255,255,255,.1);
+  padding:12px 16px;min-height:64px;
+  position:relative;overflow:hidden;
+}
+.ratio-row::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(255,230,0,.03) 4px,rgba(255,230,0,.03) 5px);
+}
+.ratio-left{flex:1;text-align:center;}
+.r-notation{font-family:'Bangers',cursive;font-size:2.8rem;color:var(--gold);opacity:0;transition:all .4s;text-shadow:3px 3px 0 #000,0 0 20px rgba(255,230,0,.6);}
+.r-notation.show{opacity:1;}
+.r-text{font-family:'Barlow Condensed',sans-serif;font-size:.85rem;color:var(--gray);opacity:0;transition:all .4s .2s;}
+.r-text.show{opacity:1;}
+.ratio-eq{font-family:'Bangers',cursive;font-size:2.2rem;color:rgba(255,255,255,.2);}
+.ratio-right{flex:1;text-align:center;}
+.r-result{font-family:'Bangers',cursive;font-size:2.2rem;color:var(--white);opacity:0;transition:all .4s .3s;text-shadow:2px 2px 0 #000;}
+.r-result.show{opacity:1;}
+.r-rlbl{font-family:'Barlow Condensed',sans-serif;font-size:.75rem;text-transform:uppercase;letter-spacing:1px;color:var(--gray);opacity:0;transition:all .4s .4s;}
+.r-rlbl.show{opacity:1;}
+
+/* BUTTONS — manga style */
+.btn-row{display:flex;gap:8px;padding:0 18px 16px;flex-wrap:wrap;}
+.btn{
+  font-family:'Bangers',cursive;font-size:1rem;letter-spacing:2px;
+  padding:8px 16px;border:3px solid #000;cursor:pointer;transition:all .15s;
+}
+.btn:active{transform:translate(2px,2px);}
+.btn-gold{background:var(--gold);color:#000;box-shadow:4px 4px 0 #000;}
+.btn-gold:hover{transform:translate(-1px,-1px);box-shadow:5px 5px 0 #000;}
+.btn-ghost{background:transparent;color:var(--gray);border-color:rgba(255,255,255,.2);}
+.btn-ghost:hover{color:var(--white);border-color:var(--white);}
+.btn-green{background:#00ff88;color:#000;box-shadow:4px 4px 0 #000;}
+.btn-green:hover{transform:translate(-1px,-1px);box-shadow:5px 5px 0 #000;}
+
+/* RIGHT */
+.right{display:flex;flex-direction:column;gap:12px;}
+
+.sponsor-card{
+  background:#000;border:4px solid var(--gold);
+  box-shadow:6px 6px 0 var(--gold);
+  padding:18px;text-align:center;display:none;
+  position:relative;overflow:hidden;
+}
+.sponsor-card::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,230,0,.08) 1px,transparent 1px);background-size:10px 10px;}
+.sponsor-card.show{display:block;}
+.sp-title{font-family:'Bangers',cursive;font-size:1.4rem;letter-spacing:4px;color:var(--gold);text-shadow:2px 2px 0 #000;}
+.sp-logo{font-size:3rem;margin:8px 0;}
+.sp-name{font-family:'Bangers',cursive;font-size:2.2rem;letter-spacing:3px;color:var(--white);text-shadow:3px 3px 0 #000;}
+.sp-reason{font-family:'Barlow Condensed',sans-serif;font-size:.9rem;color:var(--gray);margin-top:4px;}
+
+.right-panel{background:#111;border:3px solid var(--white);box-shadow:4px 4px 0 var(--white);padding:14px;position:relative;overflow:hidden;}
+.right-panel::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.03) 1px,transparent 1px);background-size:10px 10px;pointer-events:none;}
+.rp-title{font-family:'Bangers',cursive;font-size:1rem;letter-spacing:3px;color:var(--gold);margin-bottom:10px;border-bottom:2px solid rgba(255,255,255,.1);padding-bottom:6px;}
+
+.verdict-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border:2px solid rgba(255,255,255,.08);margin-bottom:7px;background:rgba(0,0,0,.3);}
+.verdict-item:last-child{margin:0;}
+.vi-logo{width:32px;height:32px;border:2px solid var(--white);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;}
+.vi-name{font-family:'Barlow Condensed',sans-serif;font-size:.9rem;flex:1;}
+.vi-ratio{font-family:'Bangers',cursive;font-size:1.3rem;color:rgba(255,255,255,.2);transition:color .4s;}
+.vi-ratio.best{color:var(--gold);text-shadow:0 0 8px rgba(255,230,0,.6);}
+.vi-ratio.mid{color:var(--blue);}
+.vi-ratio.low{color:var(--red);}
+
+.health-item{margin-bottom:10px;}
+.hi-top{display:flex;justify-content:space-between;font-family:'Barlow Condensed',sans-serif;font-size:.8rem;margin-bottom:4px;}
+.hi-bar{height:10px;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.1);overflow:hidden;}
+.hi-fill{height:100%;width:0%;transition:width .8s ease;}
+
+/* SALESMAN SIDEBAR */
+.salesman-bar{position:fixed;bottom:0;right:16px;z-index:100;display:flex;flex-direction:column;align-items:center;gap:0;}
+.sm-bubble{
+  background:#000;border:3px solid var(--gold);
+  box-shadow:4px 4px 0 var(--gold);
+  padding:10px 14px;font-family:'Barlow Condensed',sans-serif;font-size:.9rem;
+  color:var(--white);max-width:180px;text-align:center;margin-bottom:8px;
+  animation:smPop .3s cubic-bezier(.175,.885,.32,1.275);
+  position:relative;
+}
+.sm-bubble::after{content:'';position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:var(--gold);}
+.sm-bubble strong{color:var(--gold);}
+@keyframes smPop{0%{transform:scale(0);}100%{transform:scale(1);}}
+.sm-char{font-size:7rem;animation:smWave .6s ease infinite alternate;}
+@keyframes smWave{0%{transform:rotate(-5deg);}100%{transform:rotate(5deg);}}
+.sm-money{font-size:1.3rem;letter-spacing:2px;text-align:center;}
+
+/* OVERLAY */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:500;align-items:center;justify-content:center;padding:20px;}
+.overlay.show{display:flex;}
+.ov-card{
+  background:#111;border:4px solid var(--gold);
+  box-shadow:8px 8px 0 var(--gold);
+  padding:28px 36px;width:100%;max-width:500px;text-align:center;
+  animation:cardIn .3s cubic-bezier(.175,.885,.32,1.275);
+  position:relative;overflow:hidden;
+}
+.ov-card::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,230,0,.05) 1px,transparent 1px);background-size:10px 10px;}
+@keyframes cardIn{0%{transform:scale(0) rotate(-3deg);opacity:0;}100%{transform:scale(1) rotate(0);opacity:1;}}
+.ov-title{font-family:'Bangers',cursive;font-size:2.5rem;letter-spacing:4px;color:var(--gold);text-shadow:4px 4px 0 #000;margin-bottom:4px;}
+.ov-sub{font-family:'Barlow Condensed',sans-serif;font-size:.95rem;color:var(--gray);margin-bottom:6px;letter-spacing:1px;}
+.ov-warn{font-family:'Barlow Condensed',sans-serif;font-size:.85rem;color:var(--red);margin-bottom:10px;min-height:18px;}
+.sel-count{font-family:'Bangers',cursive;font-size:1.1rem;letter-spacing:2px;margin-bottom:12px;}
+.sel-count.ok{color:#00ff88;}
+.sel-count.under{color:var(--gray);}
+.compare-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+.cmp-card{
+  display:flex;align-items:center;gap:12px;padding:10px 14px;
+  border:3px solid rgba(255,255,255,.15);cursor:pointer;transition:all .15s;
+  background:rgba(0,0,0,.4);text-align:left;
+}
+.cmp-card:hover{border-color:rgba(255,255,255,.4);}
+.cmp-card.selected{border-color:var(--gold);background:rgba(255,230,0,.1);box-shadow:3px 3px 0 var(--gold);}
+.cmp-logo2{width:44px;height:44px;border:3px solid var(--white);display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;pointer-events:none;}
+.cmp-info{flex:1;pointer-events:none;}
+.cmp-name{font-family:'Bangers',cursive;font-size:1.3rem;letter-spacing:1px;}
+.cmp-ratio-big{font-family:'Bangers',cursive;font-size:1.8rem;color:var(--gold);}
+.cmp-ratio-lbl{font-family:'Barlow Condensed',sans-serif;font-size:.75rem;color:var(--gray);}
+.cmp-check{font-size:1.5rem;opacity:0;transition:opacity .2s;flex-shrink:0;pointer-events:none;}
+.cmp-card.selected .cmp-check{opacity:1;}
+
+/* FX */
+.money{position:fixed;pointer-events:none;z-index:500;animation:moneyRain linear forwards;}
+@keyframes moneyRain{0%{transform:translateY(-60px) rotate(0) scale(1);opacity:1;}100%{transform:translateY(110vh) rotate(720deg) scale(.5);opacity:0;}}
+.sfx-pop{position:fixed;pointer-events:none;z-index:400;font-family:'Bangers',cursive;font-size:3rem;color:var(--gold);text-shadow:3px 3px 0 #000;animation:sfxFly .8s ease forwards;}
+@keyframes sfxFly{0%{transform:scale(0) rotate(-10deg);opacity:1;}50%{transform:scale(1.3) rotate(5deg);opacity:1;}100%{transform:scale(1) translateY(-40px);opacity:0;}}
+.conf{position:fixed;pointer-events:none;z-index:300;animation:fall linear forwards;}
+@keyframes fall{0%{transform:translateY(-30px) rotate(0);opacity:1;}100%{transform:translateY(110vh) rotate(600deg);opacity:0;}}
+.tip{position:fixed;background:#000;border:3px solid var(--gold);box-shadow:3px 3px 0 var(--gold);padding:8px 14px;font-family:'Bangers',cursive;font-size:1.1rem;letter-spacing:2px;color:var(--gold);pointer-events:none;z-index:400;opacity:0;transition:opacity .2s;white-space:nowrap;}
+.tip.show{opacity:1;}
+</style>
+</head>
+<body>
+<div class="speed-lines"></div>
+
+<!-- ══ INTRO ════════════════════════════════════════════════ -->
+<div class="intro" id="introScreen">
+  <div class="intro-speed"></div>
+
+  <div class="money-float" style="top:8%;left:8%;animation-delay:0s;font-size:3rem;">💴</div>
+  <div class="money-float" style="top:15%;right:10%;animation-delay:.7s;font-size:2.5rem;">💵</div>
+  <div class="money-float" style="top:65%;left:6%;animation-delay:1.2s;font-size:2rem;">💶</div>
+  <div class="money-float" style="top:70%;right:7%;animation-delay:.4s;font-size:3rem;">💸</div>
+  <div class="money-float" style="top:35%;left:88%;animation-delay:.9s;font-size:2rem;">🤑</div>
+
+  <div class="sfx-knock" style="font-size:4rem;margin-bottom:8px;">ド ド ド！</div>
+  <div class="sfx-sub">alguien toca la puerta...</div>
+
+  <div class="intro-panel">
+    <div class="halftone"></div>
+    <div class="salesman-big">🧑‍💼</div>
+    <div class="speech-manga" style="margin-top:10px;">
+      ¡Buenas tardes! Represento a <strong>3 marcas de bebidas deportivas</strong> que quieren ser el <strong>sponsor oficial</strong> del equipo. 💰
+      <br><br>¡Una propuesta que no pueden rechazar!
+    </div>
+  </div>
+
+  <button class="btn-enter" onclick="enterApp()">¡VER LAS PROPUESTAS! →</button>
+</div>
+
+<!-- ══ MAIN APP ═════════════════════════════════════════════ -->
+<header>
+  <div>
+    <div class="h-title">💰 ¿CUÁL BEBIDA SPONSOREA AL EQUIPO?</div>
+    <div class="h-sub">Matemática · 6° Básico · Razones</div>
+  </div>
+  <div class="h-badge">RAZÓN AGUA:AZÚCAR</div>
+</header>
+
+<div class="layout">
+<div class="left">
+
+  <!-- TABLE -->
+  <div class="manga-panel">
+    <div class="brands-header">
+      <div class="bh">🥤 BEBIDA</div>
+      <div class="bh c">💧 AGUA</div>
+      <div class="bh c">🍬 AZÚCAR</div>
+      <div class="bh c">📊 RAZÓN</div>
+    </div>
+    <div id="brandsBody"></div>
+  </div>
+
+  <!-- DRAG PANEL -->
+  <div class="manga-panel">
+    <div class="dp-header">
+      <div class="dp-logo" id="dpLogo">🥤</div>
+      <div>
+        <div class="dp-name" id="dpName">SELECCIONA UNA BEBIDA</div>
+        <div class="dp-sub" id="dpSub">Toca una fila de la tabla</div>
+      </div>
+    </div>
+    <div class="dp-stats">
+      <div class="sbox"><div class="sval-a" id="dpAgua">—</div><div class="slbl">💧 Partes agua</div></div>
+      <div class="sbox"><div class="sval-z" id="dpAzucar">—</div><div class="slbl">🍬 Partes azúcar</div></div>
+    </div>
+    <div class="drag-area">
+      <div class="drag-inst" id="dragInst">Selecciona una bebida de la tabla para empezar</div>
+      <div class="slots-label">🍬 AZÚCAR — arrastra el agua hacia cada casilla</div>
+      <div class="matches-row" id="azucarSlots"></div>
+      <div class="bank-lbl">💧 AGUA disponible</div>
+      <div class="icons-bank" id="bankAgua"></div>
+      <div class="ratio-row">
+        <div class="ratio-left">
+          <div class="r-notation" id="rNotation">—</div>
+          <div class="r-text" id="rText">agua : azúcar</div>
+        </div>
+        <div class="ratio-eq">=</div>
+        <div class="ratio-right">
+          <div class="r-result" id="rResult">—</div>
+          <div class="r-rlbl" id="rRlbl">partes de agua por azúcar</div>
+        </div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="clearSlots()">↺ LIMPIAR</button>
+      <button class="btn btn-ghost" onclick="revealAll()">👁 VER TODAS</button>
+      <button class="btn btn-gold" onclick="openComparison()">ELEGIR SPONSOR 💰</button>
+    </div>
+  </div>
+</div>
+
+<!-- RIGHT -->
+<div class="right">
+  <div class="sponsor-card" id="sponsorCard">
+    <div class="sp-title">🏆 SPONSOR OFICIAL</div>
+    <div class="sp-logo" id="spLogo">🥤</div>
+    <div class="sp-name" id="spName">—</div>
+    <div class="sp-reason" id="spReason">—</div>
+  </div>
+
+  <div class="right-panel">
+    <div class="rp-title">📊 RAZONES CALCULADAS</div>
+    <div id="verdictList"></div>
+  </div>
+
+  <div class="right-panel">
+    <div class="rp-title">📈 COMPARACIÓN VISUAL</div>
+    <div id="healthBars"></div>
+  </div>
+</div>
+</div>
+
+<!-- SALESMAN SIDEBAR -->
+<div class="salesman-bar" id="salesmanBar">
+  <div class="sm-bubble" id="smBubble" style="display:none;"></div>
+  <div class="sm-char">🧑‍💼</div>
+  <div class="sm-money">💰💰💰</div>
+</div>
+
+<!-- OVERLAY -->
+<div id="overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:9000;justify-content:center;align-items:center;padding:20px;">
+  <div style="background:#111;border:4px solid #ffe600;box-shadow:8px 8px 0 #ffe600;padding:28px 32px;width:100%;max-width:480px;text-align:center;position:relative;">
+    <div style="font-family:'Bangers',cursive;font-size:2.2rem;letter-spacing:4px;color:#ffe600;text-shadow:3px 3px 0 #000;margin-bottom:4px;">💰 ELIGE EL SPONSOR</div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:.95rem;color:#888;margin-bottom:6px;">¿Cuál bebida patrocina al equipo?</div>
+    <div id="ovWarn" style="font-family:'Barlow Condensed',sans-serif;font-size:.85rem;color:#ff0033;margin-bottom:10px;min-height:18px;"></div>
+    <div id="selCount" style="font-family:'Bangers',cursive;font-size:1.1rem;letter-spacing:2px;color:#888;margin-bottom:12px;">0 DE 1 SELECCIONADO</div>
+    <div id="compareGrid" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;"></div>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+      <button onclick="closeOverlay()" style="font-family:'Bangers',cursive;font-size:1rem;letter-spacing:2px;padding:10px 20px;border:3px solid #888;background:transparent;color:#888;cursor:pointer;">← VOLVER</button>
+      <button onclick="confirmSponsor()" style="font-family:'Bangers',cursive;font-size:1rem;letter-spacing:2px;padding:10px 20px;border:3px solid #000;background:#00ff88;color:#000;box-shadow:4px 4px 0 #000;cursor:pointer;">¡TRATO HECHO! ✓</button>
+    </div>
+  </div>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script>
+const BRANDS=[
+  {name:'Gatorade', logo:'🟠', color:'#f97316', agua:9, azucar:3},
+  {name:'Powerade', logo:'🔵', color:'#3b82f6', agua:8, azucar:4},
+  {name:'Red Bull', logo:'🔴', color:'#ef4444', agua:6, azucar:3},
+];
+
+let bi=0, usedAgua=0, log=[], ovSel=[];
+
+const smLines=[
+  '¡Calculen bien! El dinero no miente 💵',
+  '¡Mi jefe me espera! ¿Ya decidieron? ⏰',
+  '¡Usen la matemática! Nunca falla 🧮',
+  '¡Vamos, vamos! El partido empieza pronto ⚽',
+  '¡Una buena decisión vale millones! 🤑',
+  '¡Confíen en los datos! 📊',
+];
+let smIdx=0;
+
+window.addEventListener('DOMContentLoaded',()=>{
+  setTimeout(()=>{
+    document.querySelector('.salesman-big').style.animation='salIn .8s cubic-bezier(.175,.885,.32,1.275) forwards';
+  },400);
+});
+
+function enterApp(){
+  const s=document.getElementById('introScreen');
+  s.classList.add('hide');
+  setTimeout(()=>s.style.display='none',800);
+  document.getElementById('salesmanBar').style.display='flex';
+  setTimeout(()=>showSm('¡Calculen bien! El dinero no miente 💵'),1200);
+  setInterval(()=>{showSm(smLines[smIdx%smLines.length]);smIdx++;},9000);
+  renderTable();renderVerdict();renderBars();
+}
+
+function showSm(t){
+  const b=document.getElementById('smBubble');
+  b.textContent=t;b.style.display='block';
+  clearTimeout(window._smt);
+  window._smt=setTimeout(()=>b.style.display='none',5000);
+}
+
+function gcd(a,b){return b===0?a:gcd(b,a%b);}
+function simplify(a,b){const g=gcd(a,b);return{a:a/g,b:b/g};}
+
+function renderTable(){
+  const body=document.getElementById('brandsBody');body.innerHTML='';
+  const maxR=log.length?Math.max(...log.map(x=>x.ratio)):0;
+  const minR=log.length>1?Math.min(...log.map(x=>x.ratio)):0;
+  BRANDS.forEach((b,i)=>{
+    const logged=log.find(x=>x.bi===i);
+    const rc=logged?(logged.ratio===maxR?'best':logged.ratio===minR&&log.length>1?'low':'mid'):'';
+    const row=document.createElement('div');
+    row.className='brand-row'+(i===bi?' active-row':logged?' done-row':'');
+    row.innerHTML=`
+      <div class="br-name"><div class="br-logo" style="background:${b.color}33;">${b.logo}</div>${b.name}</div>
+      <div class="br-stat br-agua">${b.agua}</div>
+      <div class="br-stat br-azucar">${b.azucar}</div>
+      <div class="br-ratio${logged?' revealed '+rc:''}">${logged?`${logged.a}:${logged.b}`:'—'}</div>`;
+    row.onclick=()=>loadBrand(i);
+    body.appendChild(row);
+  });
+}
+
+function loadBrand(i){
+  bi=i;const b=BRANDS[i];
+  document.getElementById('dpLogo').textContent=b.logo;
+  document.getElementById('dpLogo').style.borderColor=b.color;
+  document.getElementById('dpName').textContent=b.name.toUpperCase();
+  document.getElementById('dpSub').textContent=`${b.agua} partes agua · ${b.azucar} partes azúcar`;
+  document.getElementById('dpAgua').textContent=b.agua;
+  document.getElementById('dpAzucar').textContent=b.azucar;
+  document.getElementById('dragInst').textContent=`💧 Arrastra el agua a cada casilla de azúcar`;
+  buildSlots(b.azucar);buildBank(b.agua);resetRatio();renderTable();
+  showSm(`¡${b.name} quiere entrar! ¿Calcularán su razón? 🤔`);
+}
+
+function buildSlots(n){
+  usedAgua=0;
+  const c=document.getElementById('azucarSlots');c.innerHTML='';
+  for(let i=0;i<n;i++){
+    const s=document.createElement('div');s.className='match-slot';s.id=`as${i}`;
+    s.innerHTML=`<div class="match-lbl">🍬 ${i+1}</div><div class="dropped-icons" id="dai${i}"></div>`;
+    s.addEventListener('dragover',e=>{e.preventDefault();s.classList.add('drag-over');});
+    s.addEventListener('dragleave',()=>s.classList.remove('drag-over'));
+    s.addEventListener('drop',e=>{e.preventDefault();s.classList.remove('drag-over');dropAgua(i);});
+    c.appendChild(s);
+  }
+}
+
+function buildBank(n){
+  usedAgua=0;
+  const b=document.getElementById('bankAgua');b.innerHTML='';
+  for(let i=0;i<n;i++){
+    const sp=document.createElement('span');sp.className='di';sp.textContent='💧';sp.draggable=true;
+    sp.addEventListener('dragstart',e=>e.dataTransfer.setData('i',i));
+    b.appendChild(sp);
+  }
+}
+
+function dropAgua(slotIdx){
+  const b=BRANDS[bi];
+  if(usedAgua>=b.agua){showTip('YA USASTE TODA EL AGUA');return;}
+  const unused=document.querySelector('#bankAgua .di:not(.used)');if(!unused)return;
+  unused.classList.add('used');usedAgua++;
+  const dai=document.getElementById(`dai${slotIdx}`);
+  const sp=document.createElement('span');sp.className='d-icon';sp.textContent='💧';dai.appendChild(sp);
+  if(usedAgua===b.agua)calcRatio();
+}
+
+function calcRatio(){
+  const b=BRANDS[bi];
+  const g=gcd(b.agua,b.azucar);const sa=b.agua/g,saz=b.azucar/g,pp=sa/saz;
+  ['rNotation','rText','rResult','rRlbl'].forEach(id=>document.getElementById(id).classList.add('show'));
+  document.getElementById('rNotation').textContent=`${sa} : ${saz}`;
+  document.getElementById('rText').textContent=`agua : azúcar`;
+  document.getElementById('rResult').textContent=`${pp}`;
+  document.getElementById('rRlbl').textContent=`partes de agua por cada azúcar`;
+  log=log.filter(x=>x.bi!==bi);
+  log.push({bi,name:b.name,logo:b.logo,color:b.color,agua:b.agua,azucar:b.azucar,a:sa,b:saz,ratio:pp});
+  renderTable();renderVerdict();renderBars();
+  popSfx(`${sa}:${saz}!`);
+  showSm(`¡${b.name} tiene razón ${sa}:${saz}! 🤔`);
+}
+
+function resetRatio(){['rNotation','rText','rResult','rRlbl'].forEach(id=>document.getElementById(id).classList.remove('show'));}
+
+function clearSlots(){
+  const b=BRANDS[bi];buildSlots(b.azucar);buildBank(b.agua);resetRatio();
+  log=log.filter(x=>x.bi!==bi);renderTable();renderVerdict();renderBars();
+}
+
+function revealAll(){
+  BRANDS.forEach((b,i)=>{
+    if(!log.find(x=>x.bi===i)){
+      const g=gcd(b.agua,b.azucar);const sa=b.agua/g,saz=b.azucar/g;
+      log.push({bi:i,name:b.name,logo:b.logo,color:b.color,agua:b.agua,azucar:b.azucar,a:sa,b:saz,ratio:sa/saz});
+    }
+  });
+  renderTable();renderVerdict();renderBars();
+  showTip('¡RAZONES CALCULADAS!');
+  showSm('¡Ahora comparen y decidan! 💼');
+}
+
+function renderVerdict(){
+  const el=document.getElementById('verdictList');
+  const maxR=log.length?Math.max(...log.map(x=>x.ratio)):0;
+  const minR=log.length>1?Math.min(...log.map(x=>x.ratio)):0;
+  el.innerHTML=BRANDS.map((b,i)=>{
+    const l=log.find(x=>x.bi===i);
+    const rc=l?(l.ratio===maxR?'best':l.ratio===minR&&log.length>1?'low':'mid'):'';
+    return`<div class="verdict-item">
+      <div class="vi-logo" style="border-color:${b.color};">${b.logo}</div>
+      <div class="vi-name">${b.name}</div>
+      <div class="vi-ratio ${rc}">${l?`${l.a}:${l.b}`:' —'}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderBars(){
+  const el=document.getElementById('healthBars');
+  const maxR=log.length?Math.max(...log.map(x=>x.ratio)):1;
+  const minR=log.length>1?Math.min(...log.map(x=>x.ratio)):0;
+  el.innerHTML=BRANDS.map((b,i)=>{
+    const l=log.find(x=>x.bi===i);
+    const pct=l?Math.round(l.ratio/maxR*100):0;
+    const col=l?(l.ratio===maxR?'#00ff88':l.ratio===minR&&log.length>1?'#ff0033':'#00aaff'):'#333';
+    return`<div class="health-item">
+      <div class="hi-top">
+        <span style="font-family:'Barlow Condensed',sans-serif;color:var(--white);">${b.logo} ${b.name}</span>
+        <span style="font-family:'Bangers',cursive;color:${col};">${l?`${l.a}:${l.b}`:'—'}</span>
+      </div>
+      <div class="hi-bar"><div class="hi-fill" style="width:${pct}%;background:${col};"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function selectBrand(i){
+  ovSel=[i];
+  document.querySelectorAll('.cmp-card').forEach(c=>c.classList.remove('selected'));
+  const card=document.getElementById('cmp-'+i);
+  if(card) card.classList.add('selected');
+  updateSelCount();
+}
+
+function openComparison(){
+  ovSel=[];
+  const maxR=log.length?Math.max(...log.map(x=>x.ratio)):0;
+  const missing=BRANDS.length-log.length;
+  document.getElementById('ovWarn').textContent=missing>0?`⚠ ${missing} BEBIDA${missing>1?'S':''} SIN CALCULAR`:'';
+  const sorted=[...BRANDS.map((b,i)=>({b,i,l:log.find(x=>x.bi===i)}))].sort((a,bb)=>{
+    if(!a.l&&!bb.l)return 0;if(!a.l)return 1;if(!bb.l)return -1;return bb.l.ratio-a.l.ratio;
+  });
+  const grid=document.getElementById('compareGrid');grid.innerHTML='';
+  sorted.forEach(({b,i,l})=>{
+    const card=document.createElement('div');card.className='cmp-card';card.id=`cmp-${i}`;
+    const re=l?`<div class="cmp-ratio-big">${l.a} : ${l.b}</div><div class="cmp-ratio-lbl">${l.ratio} parte${l.ratio!==1?'s':''} de agua por azúcar</div>`:`<div class="cmp-ratio-lbl" style="color:var(--gray)">Sin calcular</div>`;
+    card.innerHTML=`<div class="cmp-logo2" style="border-color:${b.color};">${b.logo}</div><div class="cmp-info"><div class="cmp-name">${b.name}</div>${re}</div><div class="cmp-check">✅</div>`;
+    card.setAttribute('data-idx', i);
+    card.onclick = function(){ selectBrand(parseInt(this.getAttribute('data-idx'))); };
+    grid.appendChild(card);
+  });
+  updateSelCount();
+  document.getElementById('overlay').style.display='flex';
+}
+
+function updateSelCount(){
+  const el=document.getElementById('selCount');
+  el.textContent=`${ovSel.length} DE 1 SELECCIONADO`;
+  el.className='sel-count'+(ovSel.length===1?' ok':' under');
+}
+
+function closeOverlay(){document.getElementById('overlay').style.display='none';}
+
+function confirmSponsor(){
+  if(!ovSel.length){showTip('¡SELECCIONA UNA BEBIDA!');return;}
+  closeOverlay();
+  const b=BRANDS[ovSel[0]];const l=log.find(x=>x.bi===ovSel[0]);
+  document.getElementById('spLogo').textContent=b.logo;
+  document.getElementById('spName').textContent=b.name;
+  document.getElementById('spReason').textContent=l?`Razón agua:azúcar = ${l.a}:${l.b}`:'¡Sponsor elegido!';
+  document.getElementById('sponsorCard').style.borderColor=b.color;
+  document.getElementById('sponsorCard').style.boxShadow=`6px 6px 0 ${b.color}`;
+  document.getElementById('sponsorCard').classList.add('show');
+  moneyRain();confetti();popSfx('¡TRATO HECHO!');
+  showSm(`🎉 ¡BIENVENIDOS ${b.name.toUpperCase()}! 🤝`);
+}
+
+function popSfx(text){
+  const el=document.createElement('div');el.className='sfx-pop';el.textContent=text;
+  el.style.cssText=`left:${30+Math.random()*40}%;top:${20+Math.random()*30}%;position:fixed;z-index:400;`;
+  document.body.appendChild(el);el.addEventListener('animationend',()=>el.remove());
+}
+
+function moneyRain(){
+  const bills=['💵','💴','💶','💷','💸','🤑'];
+  for(let i=0;i<70;i++){
+    const m=document.createElement('div');m.className='money';
+    m.textContent=bills[Math.floor(Math.random()*bills.length)];
+    m.style.cssText=`left:${Math.random()*100}vw;top:-60px;font-size:${1.5+Math.random()*2.5}rem;animation-duration:${1.5+Math.random()*2}s;animation-delay:${Math.random()*1.5}s;`;
+    document.body.appendChild(m);m.addEventListener('animationend',()=>m.remove());
+  }
+}
+
+function confetti(){
+  const cols=['#ffe600','#00ff88','#00aaff','#ff0033','#fff'];
+  for(let i=0;i<40;i++){
+    const c=document.createElement('div');c.className='conf';
+    c.style.cssText=`left:${Math.random()*100}vw;top:-20px;background:${cols[Math.floor(Math.random()*cols.length)]};width:${4+Math.random()*10}px;height:${4+Math.random()*10}px;animation-duration:${1.5+Math.random()*2}s;animation-delay:${Math.random()*.5}s;border-radius:${Math.random()>.5?'50%':'2px'};`;
+    document.body.appendChild(c);c.addEventListener('animationend',()=>c.remove());
+  }
+}
+
+function showTip(t){
+  const el=document.getElementById('tip');el.textContent=t;
+  el.style.cssText='left:50%;top:50%;transform:translate(-50%,-50%);';
+  el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2500);
+}
+</script>
+</body>
+</html>
