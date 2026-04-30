@@ -145,6 +145,7 @@ header{background:linear-gradient(90deg,#0d1b2a,#1a2a4a,#0d1b2a);border-bottom:3
 .overlay.show{display:flex;}
 .ov-card{background:var(--card);border:2px solid var(--gold);border-radius:20px;padding:30px 40px;width:100%;max-width:560px;text-align:center;animation:cardIn .4s ease;box-shadow:0 0 60px rgba(255,214,10,.2);}
 @keyframes cardIn{from{transform:scale(.85) translateY(20px);opacity:0;}to{transform:scale(1) translateY(0);opacity:1;}}
+@keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-8px);}40%{transform:translateX(8px);}60%{transform:translateX(-5px);}80%{transform:translateX(5px);}}
 .ov-title{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:4px;color:var(--gold);margin-bottom:4px;}
 .ov-sub{font-family:'Barlow Condensed',sans-serif;font-size:.95rem;color:var(--gray);letter-spacing:1px;margin-bottom:6px;}
 .ov-warn{font-family:'Barlow Condensed',sans-serif;font-size:.85rem;color:var(--red);margin-bottom:12px;min-height:18px;}
@@ -543,8 +544,39 @@ function closeOverlay(){document.getElementById('overlay').classList.remove('sho
 
 function confirmSelection(){
   const pos=POS[pi];
-  if(ovSel.length===0){showTip('Selecciona al menos un jugador');return;}
-  if(ovSel.length>pos.choose){showTip(`Solo ${pos.choose} cupo${pos.choose>1?'s':''}`);return;}
+  const warn=document.getElementById('ovWarn');
+  if(ovSel.length!==pos.choose){showTip(`Elige exactamente ${pos.choose} jugador${pos.choose>1?'es':''}`);return;}
+
+  const posLog=log.filter(x=>x.posId===pos.id);
+
+  // Requiere que todos tengan razón calculada antes de confirmar
+  if(posLog.length<pos.players.length){
+    warn.textContent='⚠ Calcula primero la razón de todos los jugadores.';
+    warn.style.color='var(--gold)';
+    return;
+  }
+
+  // Determinar cuáles son los mejores: top N por ratio (con tolerancia de empate)
+  const sorted=[...posLog].sort((a,b)=>b.ratio-a.ratio);
+  const cutoffRatio=sorted[pos.choose-1].ratio;
+  const validIndices=posLog.filter(x=>x.ratio>=cutoffRatio).map(x=>x.li);
+
+  const allValid=ovSel.every(i=>validIndices.includes(i));
+
+  if(!allValid){
+    const wrongNames=ovSel
+      .filter(i=>!validIndices.includes(i))
+      .map(i=>pos.players[i].name.split(' ')[0]);
+    warn.textContent=`❌ ${wrongNames.join(', ')} no tiene${wrongNames.length>1?'n':''} la mejor razón. ¡Compara de nuevo!`;
+    warn.style.color='var(--red)';
+    ovSel.filter(i=>!validIndices.includes(i)).forEach(i=>{
+      const card=document.getElementById(`cmp-${i}`);
+      if(card){card.style.animation='shake .4s ease';setTimeout(()=>card.style.animation='',450);}
+    });
+    return;
+  }
+
+  warn.textContent='';
   closeOverlay();
   const chosen=ovSel.map(i=>({...pos.players[i],logged:log.find(x=>x.posId===pos.id&&x.li===i)}));
   addFormation(pos.rowId,chosen);
