@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pregunta I — Álbum del Mundial 2026</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f5f5f0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+  .wrap {
+    background: #fff;
+    border-radius: 16px;
+    padding: 2rem 2.5rem;
+    max-width: 960px;
+    width: 100%;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+  }
+  .titulo-clase {
+    font-size: 13px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 0.4rem;
+  }
+  h1 {
+    font-size: 22px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 1.25rem;
+  }
+  .enunciado {
+    background: #f0f4ff;
+    border-left: 4px solid #3b6fd4;
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    font-size: 16px;
+    color: #1a1a1a;
+    line-height: 1.6;
+  }
+  .paises-ref {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 0.75rem;
+  }
+  .tag {
+    font-size: 13px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 99px;
+  }
+  .tag-arg { background: #B5D4F4; color: #0C447C; }
+  .tag-bra { background: #C0DD97; color: #3B6D11; }
+  .tag-fra { background: #CECBF6; color: #3C3489; }
+  .tag-esp { background: #FAC775; color: #633806; }
+  .tag-por { background: #F5C4B3; color: #712B13; }
+  .tag-eng { background: #F4C0D1; color: #72243E; }
+
+  .grillas-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 1.5rem;
+  }
+  .grilla-card {
+    border: 1.5px solid #e0e0e0;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .grilla-header {
+    padding: 0.7rem 1rem;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a1a;
+    background: #fafafa;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .badge {
+    font-size: 12px;
+    padding: 2px 10px;
+    border-radius: 99px;
+    font-weight: 700;
+  }
+  .badge-a { background: #dbeafe; color: #1e40af; }
+  .badge-b { background: #fef3c7; color: #92400e; }
+  .grid-wrap {
+    padding: 1rem;
+    display: flex;
+    justify-content: center;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 2px;
+  }
+  .cell {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8.5px;
+    font-weight: 700;
+    border-radius: 3px;
+    letter-spacing: -0.3px;
+  }
+  .c-arg { background: #B5D4F4; color: #0C447C; }
+  .c-bra { background: #C0DD97; color: #3B6D11; }
+  .c-fra { background: #CECBF6; color: #3C3489; }
+  .c-esp { background: #FAC775; color: #633806; }
+  .c-por { background: #F5C4B3; color: #712B13; }
+  .c-eng { background: #F4C0D1; color: #72243E; }
+
+  .porcentajes {
+    display: none;
+    padding: 0 1rem 1rem;
+    animation: fadeIn 0.3s ease;
+  }
+  .porcentajes.visible { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+  .porc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .porc-item {
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 6px;
+  }
+  .porc-ok { background: #dcfce7; color: #166534; }
+  .porc-err { background: #fee2e2; color: #991b1b; }
+
+  .btn-row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+  }
+  .btn {
+    padding: 0.65rem 2rem;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+  }
+  .btn-revelar {
+    background: #3b6fd4;
+    color: #fff;
+  }
+  .btn-revelar:hover { background: #2d5bb8; }
+  .btn-reset {
+    background: #f0f0f0;
+    color: #555;
+    display: none;
+  }
+  .btn-reset:hover { background: #e0e0e0; }
+  .btn-reset.visible { display: block; }
+
+  .pregunta-cierre {
+    background: #fff8e1;
+    border: 1.5px solid #fbc02d;
+    border-radius: 10px;
+    padding: 0.85rem 1.25rem;
+    text-align: center;
+    font-size: 15px;
+    color: #5d4037;
+  }
+  .pregunta-cierre strong { color: #1a1a1a; }
+
+  .leyenda {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 1.25rem;
+  }
+  .leg { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #555; }
+  .leg-dot { width: 16px; height: 16px; border-radius: 3px; flex-shrink: 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="titulo-clase">Álbum del Mundial 2026 · Pregunta I</p>
+  <h1>¿Cuál grilla representa bien esta colección?</h1>
+
+  <div class="enunciado">
+    Una colección tiene la siguiente distribución de láminas:
+    <div class="paises-ref">
+      <span class="tag tag-arg">ARG 40%</span>
+      <span class="tag tag-bra">BRA 20%</span>
+      <span class="tag tag-fra">FRA 10%</span>
+      <span class="tag tag-esp">ESP 10%</span>
+      <span class="tag tag-por">POR 10%</span>
+      <span class="tag tag-eng">ENG 10%</span>
+    </div>
+  </div>
+
+  <div class="leyenda">
+    <div class="leg"><div class="leg-dot c-arg"></div> Argentina</div>
+    <div class="leg"><div class="leg-dot c-bra"></div> Brasil</div>
+    <div class="leg"><div class="leg-dot c-fra"></div> Francia</div>
+    <div class="leg"><div class="leg-dot c-esp"></div> España</div>
+    <div class="leg"><div class="leg-dot c-por"></div> Portugal</div>
+    <div class="leg"><div class="leg-dot c-eng"></div> Inglaterra</div>
+  </div>
+
+  <div class="grillas-row">
+    <div class="grilla-card">
+      <div class="grilla-header">
+        <span class="badge badge-a">Grilla A</span>
+      </div>
+      <div class="grid-wrap">
+        <div class="grid" id="gridA"></div>
+      </div>
+      <div class="porcentajes" id="porcA">
+        <div class="porc-grid">
+          <div class="porc-item porc-ok">ARG <span>40% ✓</span></div>
+          <div class="porc-item porc-ok">BRA <span>20% ✓</span></div>
+          <div class="porc-item porc-ok">FRA <span>10% ✓</span></div>
+          <div class="porc-item porc-ok">ESP <span>10% ✓</span></div>
+          <div class="porc-item porc-ok">POR <span>10% ✓</span></div>
+          <div class="porc-item porc-ok">ENG <span>10% ✓</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grilla-card">
+      <div class="grilla-header">
+        <span class="badge badge-b">Grilla B</span>
+      </div>
+      <div class="grid-wrap">
+        <div class="grid" id="gridB"></div>
+      </div>
+      <div class="porcentajes" id="porcB">
+        <div class="porc-grid">
+          <div class="porc-item porc-ok">ARG <span>40% ✓</span></div>
+          <div class="porc-item porc-err">BRA <span>30% ✗</span></div>
+          <div class="porc-item porc-ok">FRA <span>10% ✓</span></div>
+          <div class="porc-item porc-ok">ESP <span>10% ✓</span></div>
+          <div class="porc-item porc-ok">POR <span>10% ✓</span></div>
+          <div class="porc-item porc-err">ENG <span>0% ✗</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-revelar" id="btnRevelar" onclick="revelar()">Revelar porcentajes</button>
+    <button class="btn btn-reset" id="btnReset" onclick="resetear()">Ocultar</button>
+  </div>
+
+  <div class="pregunta-cierre">
+    <strong>¿Cómo saben que la Grilla B está mal?</strong><br>
+    Justifiquen usando los porcentajes de cada país.
+  </div>
+</div>
+
+<script>
+const colorMap = { ARG:'c-arg', BRA:'c-bra', FRA:'c-fra', ESP:'c-esp', POR:'c-por', ENG:'c-eng' };
+
+const dataA = [
+  ...Array(40).fill('ARG'),
+  ...Array(20).fill('BRA'),
+  ...Array(10).fill('FRA'),
+  ...Array(10).fill('ESP'),
+  ...Array(10).fill('POR'),
+  ...Array(10).fill('ENG'),
+];
+
+const dataB = [
+  ...Array(40).fill('ARG'),
+  ...Array(30).fill('BRA'),
+  ...Array(10).fill('FRA'),
+  ...Array(10).fill('ESP'),
+  ...Array(10).fill('POR'),
+];
+
+function buildGrid(id, data) {
+  const g = document.getElementById(id);
+  g.innerHTML = '';
+  data.forEach(code => {
+    const d = document.createElement('div');
+    d.className = 'cell ' + colorMap[code];
+    d.textContent = code;
+    g.appendChild(d);
+  });
+}
+
+function revelar() {
+  document.getElementById('porcA').classList.add('visible');
+  document.getElementById('porcB').classList.add('visible');
+  document.getElementById('btnRevelar').style.display = 'none';
+  document.getElementById('btnReset').classList.add('visible');
+}
+
+function resetear() {
+  document.getElementById('porcA').classList.remove('visible');
+  document.getElementById('porcB').classList.remove('visible');
+  document.getElementById('btnRevelar').style.display = 'block';
+  document.getElementById('btnReset').classList.remove('visible');
+}
+
+buildGrid('gridA', dataA);
+buildGrid('gridB', dataB);
+</script>
+</body>
+</html>
