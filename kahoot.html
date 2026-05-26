@@ -23,7 +23,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
 .timer-row input[type=number]:focus { border-color: var(--purple); }
 .timer-row span { color: var(--muted); font-size: 0.85rem; }
 .q-list { display: flex; flex-direction: column; gap: 0.85rem; margin-bottom: 1rem; }
-.q-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.1rem 1.2rem; display: flex; flex-direction: column; gap: 0.9rem; }
+.q-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.1rem 1.2rem 1.1rem 2.1rem; display: flex; flex-direction: column; gap: 0.9rem; }
 .q-card-top { display: grid; grid-template-columns: 80px 1fr 28px; gap: 0.9rem; align-items: start; }
 .thumb { width: 80px; height: 60px; border-radius: 8px; border: 1.5px dashed var(--border); background: var(--bg); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; cursor: pointer; flex-shrink: 0; }
 .thumb img { width: 100%; height: 100%; object-fit: cover; }
@@ -141,6 +141,17 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
 }
 .save-btn:hover, .load-btn:hover { background: var(--card); color: var(--text); border-color: var(--muted); }
 .autosave-badge { font-size: 0.7rem; color: var(--muted); text-align: right; margin-bottom: 0.4rem; height: 1rem; }
+
+.q-card { position: relative; }
+.drag-handle {
+  position: absolute; left: 0.5rem; top: 50%; transform: translateY(-50%);
+  color: var(--border); cursor: grab; font-size: 1.1rem; line-height: 1;
+  padding: 0.25rem; border-radius: 4px; transition: color 0.15s; user-select: none;
+}
+.q-card:hover .drag-handle { color: var(--muted); }
+.drag-handle:active { cursor: grabbing; }
+.q-card.dragging { opacity: 0.4; border: 1.5px dashed var(--purple); }
+.q-card.drag-over { border-color: var(--purple); background: rgba(124,58,237,0.07); }
 </style>
 </head>
 <body>
@@ -216,7 +227,8 @@ function checkReady() {
 }
 function render() {
   $('qList').innerHTML = qs.map((q, i) => `
-    <div class="q-card">
+    <div class="q-card" draggable="true" data-id="${q.id}" ondragstart="dragStart(event,${q.id})" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event,${q.id})" ondragend="dragEnd(event)">
+      <span class="drag-handle" title="Mover">⠿</span>
       <div class="q-card-top">
         <div class="thumb"><div class="thumb-hint">📷<br>Opcional</div>${q.img ? `<img src="${q.img}" alt="">` : ''}
           <input type="file" accept="image/*" onchange="handleImg(${q.id},this)">
@@ -429,6 +441,34 @@ function loadAutosave() {
       setTimeout(() => { if(b) b.textContent = ''; }, 3000);
     }
   } catch(e) {}
+}
+
+let dragId = null;
+function dragStart(e, id) {
+  dragId = id;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(() => e.target.classList.add('dragging'), 0);
+}
+function dragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  e.currentTarget.classList.add('drag-over');
+}
+function dragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+function drop(e, targetId) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (dragId === targetId) return;
+  const fromIdx = qs.findIndex(q => q.id === dragId);
+  const toIdx   = qs.findIndex(q => q.id === targetId);
+  if (fromIdx < 0 || toIdx < 0) return;
+  const [moved] = qs.splice(fromIdx, 1);
+  qs.splice(toIdx, 0, moved);
+  render(); autosave();
+}
+function dragEnd(e) {
+  dragId = null;
+  document.querySelectorAll('.q-card').forEach(c => c.classList.remove('dragging','drag-over'));
 }
 
 loadAutosave();
